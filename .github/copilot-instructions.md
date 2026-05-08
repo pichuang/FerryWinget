@@ -35,7 +35,7 @@ podman run -p 8080:8080 -v ./mirror-data:/app/mirror-data ferry-winget-server:la
 
 ## Architecture
 
-```
+```text
 src/
   FerryWinget.Core/           → 共用函式庫 (config, models, filtering, storage)
   FerryWinget.Downloader/     → 外網下載器 CLI
@@ -61,12 +61,12 @@ config.yaml                   → 共用設定檔
 
 ### Winget REST API Endpoints (Server)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/information` | GET | Server 資訊、支援 API 版本 |
-| `/api/manifestSearch` | POST | 套件搜尋 (keyword, filters, inclusions) |
-| `/api/packageManifests/{id}` | GET | 完整 manifest (URL rewrite 到內網) |
-| `/api/installers/{id}/{ver}/{arch}/{file}` | GET | Installer 二進位下載 |
+| Endpoint                                     | Method | Description                                   |
+| -------------------------------------------- | ------ | --------------------------------------------- |
+| `/api/information`                           | GET    | Server 資訊、支援 API 版本                    |
+| `/api/manifestSearch`                        | POST   | 套件搜尋 (keyword, filters, inclusions)       |
+| `/api/packageManifests/{id}`                 | GET    | 完整 manifest (URL rewrite 到內網)            |
+| `/api/installers/{id}/{ver}/{arch}/{file}`   | GET    | Installer 二進位下載                          |
 
 ## Key Conventions
 

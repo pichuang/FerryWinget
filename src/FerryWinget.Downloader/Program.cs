@@ -49,7 +49,7 @@ public class Program
         // Setup services
         var store = new FileSystemPackageStore(config.Storage.RootPath, config.Storage.PackagesDir, config.Storage.InstallersDir);
         var filter = new PackageFilter(config.Filtering);
-        var retention = new VersionRetentionService(config.Retention.MaxMajorVersions);
+        var retention = new VersionRetentionService(config.Retention);
         var downloader = new InstallerDownloader(http, store, config.Downloader);
         var reportsDir = Path.Combine(config.Storage.RootPath, config.Storage.ReportsDir);
         var reportGen = new ReportGenerator(reportsDir);

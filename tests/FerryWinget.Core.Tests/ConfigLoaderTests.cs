@@ -110,7 +110,7 @@ public class ConfigLoaderTests
         var config = ConfigLoader.LoadFromString("{}");
 
         config.Source.GithubRepo.Should().Be("microsoft/winget-pkgs");
-        config.Retention.MaxMajorVersions.Should().Be(5);
+        config.Retention.MaxMajorVersions.Should().Be(3);
         config.Downloader.MaxConcurrency.Should().Be(16);
         config.Server.Port.Should().Be(8080);
         config.Firewall.Enabled.Should().BeFalse();

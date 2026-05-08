@@ -1,0 +1,21 @@
+# markdownlint configuration
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+default: true
+
+# MD013 - Line length
+# 停用嚴格行寬限制，因專案含中文內容、寬表格與 ASCII art 圖表
+MD013: false
+
+# MD024 - Multiple headings with the same content
+# 允許不同區段下的相同標題 (如多個 "範例")
+MD024:
+  siblings_only: true
+
+# MD033 - Inline HTML
+# 允許必要的 HTML 標籤
+MD033: false
+
+# MD041 - First line in a file should be a top-level heading
+# SKILL.md 等檔案以 YAML front matter 開頭
+MD041: false

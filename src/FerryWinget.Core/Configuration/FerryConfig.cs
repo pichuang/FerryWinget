@@ -44,7 +44,12 @@ public sealed class BlocklistConfig
 
 public sealed class RetentionConfig
 {
-    public int MaxMajorVersions { get; set; } = 5;
+    public int MaxMajorVersions { get; set; } = 3;
+    public int LatestMajorMinorCount { get; set; } = 3;
+    public int OlderMajorMinorCount { get; set; } = 1;
+    public int PatchCount { get; set; } = 2;
+    public int GracePeriodDays { get; set; } = 30;
+    public List<string> PinnedTags { get; set; } = ["prod", "latest"];
 }
 
 public sealed class DownloaderConfig

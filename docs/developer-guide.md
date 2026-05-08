@@ -17,7 +17,7 @@
 ## 環境需求
 
 | 工具 | 最低版本 | 用途 |
-|------|---------|------|
+| ------ | --------- | ------ |
 | .NET SDK | 10.0 | 編譯和執行 |
 | podman / docker | 5.0+ | 容器建置與測試 |
 | Azure CLI (`az`) | 2.60+ | Firewall Policy 部署 (選用) |
@@ -52,7 +52,7 @@ dotnet run --project src/FerryWinget.Downloader -- config.yaml --dry-run
 
 ## 專案架構
 
-```
+```text
 ferry-winget/
 ├── src/
 │   ├── FerryWinget.Core/               # 共用函式庫
@@ -105,7 +105,7 @@ ferry-winget/
 
 ### 專案相依關係
 
-```
+```text
 Core ← Downloader    (Core 提供 config、models、filtering、storage)
 Core ← Server        (Core 提供 config、models、storage)
 
@@ -117,7 +117,7 @@ Server.Tests → Server + Core
 ### 技術堆疊
 
 | 類別 | 技術 |
-|------|------|
+| ------ | ------ |
 | Runtime | .NET 10 (LTS) |
 | Web Framework | ASP.NET Core Minimal APIs + Controllers |
 | YAML 解析 | YamlDotNet (`UnderscoredNamingConvention`) |
@@ -131,7 +131,7 @@ Server.Tests → Server + Core
 
 ### 元件間的資料流
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │ 外網環境 (Downloader CLI)                                     │
 │                                                              │
@@ -172,7 +172,8 @@ Server.Tests → Server + Core
 4. **時區** — 所有時間戳記透過 `TaipeiTimeHelper` 輸出 Asia/Taipei (UTC+8)，確保報告和日誌時間一致。
 
 5. **檔案系統儲存** — 使用目錄結構而非資料庫：
-   ```
+
+   ```text
    mirror-data/
    ├── packages/{PackageId}/{Version}/{PackageId}.yaml
    └── installers/{PackageId}/{Version}/{Architecture}/{filename}
@@ -245,7 +246,7 @@ timezone: "Asia/Taipei"                   # 所有時間戳記使用的時區
 ### Glob 模式語法
 
 | 模式 | 說明 | 範例匹配 |
-|------|------|---------|
+| ------ | ------ | --------- |
 | `GitHub.*` | 匹配以 `GitHub.` 開頭的所有套件 | `GitHub.Desktop`, `GitHub.CLI` |
 | `*` | 匹配所有套件 | (全部) |
 | `Microsoft.Visual?tudio*` | `?` 匹配單字元 | `Microsoft.VisualStudio`, `Microsoft.VisualStudioCode` |
@@ -284,7 +285,7 @@ dotnet test --logger "console;verbosity=detailed"
 ### 測試涵蓋範圍
 
 | 測試專案 | 數量 | 涵蓋內容 |
-|---------|------|---------|
+| --------- | ------ | --------- |
 | Core.Tests | 22 | PackageFilter (7)、ConfigLoader (4)、FileSystemPackageStore (8)、TaipeiTimeHelper (3) |
 | Downloader.Tests | 23 | VersionRetention (6)、UrlAnalyzer (5)、FirewallDeployer (6)、ReportGenerator (3)、GitHubManifestClient (3) |
 | Server.Tests | 10 | Information API (1)、ManifestSearch (3)、PackageManifests (4)、Installer Download (2) |
@@ -385,6 +386,7 @@ podman run -d --name ferry-winget \
 ### ⚠️ Self-Maintenance Rule
 
 對本專案進行結構性變更時（新增/刪除/重新命名檔案、變更架構、新增功能、修改設定參數），**必須同步更新**：
+
 - `.github/copilot-instructions.md`
 - 本文件（若影響開發流程）
 - `docs/operations-guide.md`（若影響維運流程）
@@ -395,39 +397,45 @@ podman run -d --name ferry-winget \
 
 ### 常見問題
 
-**Q: GitHub API rate limit 錯誤**
-```
+#### Q: GitHub API rate limit 錯誤
+
+```text
 A: 在 config.yaml 的 source.github_token 設定 GitHub Personal Access Token (PAT)
    未認證: 60 req/hr，認證: 5,000 req/hr
 ```
 
-**Q: Downloader 下載速度慢**
-```
+#### Q: Downloader 下載速度慢
+
+```text
 A: 調整 config.yaml 的 downloader.max_concurrency (預設 16)
    注意：太高可能觸發 GitHub rate limit
 ```
 
-**Q: Server 啟動後 winget 找不到套件**
-```
+#### Q: Server 啟動後 winget 找不到套件
+
+```text
 A: 確認 mirror-data/ 目錄中有套件資料 (先執行 Downloader)
    Server 啟動時會從檔案系統建立記憶體索引
 ```
 
-**Q: Firewall 部署失敗**
-```
+#### Q: Firewall 部署失敗
+
+```text
 A: 1. 確認 az login 已完成
    2. 確認有 Firewall Policy 的寫入權限
    3. 先使用 --dry-run 檢查產生的命令
 ```
 
-**Q: Server 測試失敗 — config.yaml not found**
-```
+#### Q: Server 測試失敗 — config.yaml not found
+
+```text
 A: Server 測試使用 WebApplicationFactory，會自動在記憶體中建立測試 config
    確認 TestServerFixture.cs 的 SeedTestData 方法是否有更新
 ```
 
-**Q: 容器內無法讀取 mirror-data**
-```
+#### Q: 容器內無法讀取 mirror-data
+
+```text
 A: 確認 volume mount 權限。podman 使用 :Z 標籤處理 SELinux：
    podman run -v ./mirror-data:/app/mirror-data:Z ...
 ```

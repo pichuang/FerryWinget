@@ -156,6 +156,7 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 ### 步驟 4: 搬運 mirror-data 到內網
 
 將以下目錄搬運到內網 Server 主機：
+
 - `mirror-data/` (完整目錄)
 - `config.yaml` (或 `config-production.yaml`)
 
@@ -164,11 +165,13 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 ### 步驟 5: 啟動內網 Server
 
 **方式 A: 直接執行**
+
 ```bash
 dotnet run --project src/FerryWinget.Server -- config-production.yaml
 ```
 
 **方式 B: 容器執行 (建議)**
+
 ```bash
 # 建置容器
 podman build -t ferry-winget-server:latest -f src/FerryWinget.Server/Dockerfile .
@@ -365,6 +368,7 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml --dry-
 ```
 
 產生的檔案：
+
 - `reports/firewall-commands.sh` — 可直接執行的 shell 腳本
 - `reports/firewall-fqdns.md` — FQDN 清單報告
 
@@ -404,6 +408,7 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 ### 啟動方式
 
 **容器方式 (建議)**
+
 ```bash
 podman run -d --name ferry-winget \
   -p 8080:8080 \
@@ -414,6 +419,7 @@ podman run -d --name ferry-winget \
 ```
 
 **直接執行方式**
+
 ```bash
 dotnet run --project src/FerryWinget.Server -- /etc/ferry-winget/config.yaml
 ```
@@ -453,6 +459,7 @@ podman restart ferry-winget
 ### Web UI
 
 瀏覽器開啟 `http://<server-ip>:8080/` 可使用 Web UI：
+
 - 搜尋套件
 - 查看版本清單
 - 查看 winget source add 命令
@@ -601,6 +608,7 @@ Firewall 需要的所有 FQDN，按頂層域名分組：
 ### Server 故障
 
 1. 重新部署容器：
+
    ```bash
    podman rm -f ferry-winget
    podman run -d --name ferry-winget \
@@ -609,6 +617,7 @@ Firewall 需要的所有 FQDN，按頂層域名分組：
      --restart=always \
      ferry-winget-server:latest
    ```
+
 2. 驗證: `curl http://localhost:8080/api/information`
 
 ### mirror-data 損毀
@@ -635,6 +644,7 @@ podman restart ferry-winget
 ## 常見問題
 
 **Q: 磁碟空間不足**
+
 ```
 A: 減少 retention.max_major_versions 的數值 (例如從 5 改為 3)
    然後重新執行 Downloader，舊版本會被標記為移除
@@ -642,6 +652,7 @@ A: 減少 retention.max_major_versions 的數值 (例如從 5 改為 3)
 ```
 
 **Q: 新增套件後 winget 搜尋不到**
+
 ```
 A: 1. 確認套件已在 mirror-data/packages/ 中
    2. 重啟 Server (podman restart ferry-winget)
@@ -649,6 +660,7 @@ A: 1. 確認套件已在 mirror-data/packages/ 中
 ```
 
 **Q: winget install 下載失敗**
+
 ```
 A: 1. 確認 installer 檔案存在於 mirror-data/installers/ 中
    2. 檢查 Server 日誌: podman logs ferry-winget
@@ -656,12 +668,14 @@ A: 1. 確認 installer 檔案存在於 mirror-data/installers/ 中
 ```
 
 **Q: Downloader 執行中斷，部分下載**
+
 ```
 A: 直接重新執行 Downloader。已下載的檔案會被跳過 (InstallerExistsAsync 檢查)。
    SHA256 驗證確保只有完整正確的檔案被保存。
 ```
 
 **Q: 某個套件有安全漏洞，需要緊急封鎖**
+
 ```
 A: 1. 將套件加入 config.yaml 的 blocklist
    2. 手動刪除 mirror-data/ 中對應的檔案
@@ -670,6 +684,7 @@ A: 1. 將套件加入 config.yaml 的 blocklist
 ```
 
 **Q: Azure Firewall Policy 更新後，下載仍被封鎖**
+
 ```
 A: 1. 確認 Firewall Policy 已正確套用到 Firewall
    2. 檢查 reports/firewall-fqdns.md 的 FQDN 清單是否完整

@@ -18,6 +18,7 @@ This section of the prompt contains the specific settings and configurations req
 Any settings that are not specified will be set to default values. The default values are provided in `[square brackets]`.
 
 ### Basic Project Information
+
 1. Project to containerize:
    - `[ProjectName (provide path to .csproj file)]`
 
@@ -34,6 +35,7 @@ Any settings that are not specified will be set to default values. The default v
    - `None`
 
 ### Container Configuration
+
 1. Ports that must be exposed in the container image:
    - Primary HTTP port: `8080`
    - Additional ports: `None`
@@ -45,6 +47,7 @@ Any settings that are not specified will be set to default values. The default v
    - default ASPNETCORE_URLS=http://+:8080 (override if different configuration is needed)
 
 ### Build configuration
+
 1. Custom build steps that must be performed before building the container image:
    - None
 
@@ -55,6 +58,7 @@ Any settings that are not specified will be set to default values. The default v
    - `[List any private NuGet feeds with authentication details, or "None"]`
 
 ### Dependencies
+
 1. System packages that must be installed in the container image:
    - None
 
@@ -65,10 +69,12 @@ Any settings that are not specified will be set to default values. The default v
    - None
 
 ### System Configuration
+
 1. Environment variables that must be set in the container image:
    - Use defaults
 
 ### File System
+
 1. Files/directories that need to be copied to the container image:
    - None
    - Target location in container: Not applicable
@@ -80,10 +86,12 @@ Any settings that are not specified will be set to default values. The default v
    - `Use defaults`
 
 ### .dockerignore Configuration
+
 1. Patterns to include in the `.dockerignore` file (.dockerignore will already have common defaults; these are additional patterns):
    - Additional patterns: `None`
 
 ### Health Check Configuration
+
 1. Health check endpoint:
    - Health check URL path
 
@@ -91,6 +99,7 @@ Any settings that are not specified will be set to default values. The default v
    - 30s interval, 3s timeout, 5s start period, 3 retries
 
 ### Additional Instructions
+
 1. Other instructions that must be followed to containerize the project:
    - None
 
@@ -117,9 +126,9 @@ Any settings that are not specified will be set to default values. The default v
    - The Linux distribution specified in containerization settings (Azure Linux)
    - If the user does not request specific base images in the containerization settings, then the base images MUST be valid mcr.microsoft.com/dotnet images with a tag as shown in the example Dockerfile, below, or in documentation
    - Official Microsoft .NET images for build and runtime stages:
-      - SDK image tags (for build stage): https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md
-      - ASP.NET Core runtime image tags: https://github.com/dotnet/dotnet-docker/blob/main/README.aspnet.md
-      - .NET runtime image tags: https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md
+      - SDK image tags (for build stage): <https://github.com/dotnet/dotnet-docker/blob/main/README.sdk.md>
+      - ASP.NET Core runtime image tags: <https://github.com/dotnet/dotnet-docker/blob/main/README.aspnet.md>
+      - .NET runtime image tags: <https://github.com/dotnet/dotnet-docker/blob/main/README.runtime.md>
 5. Create a Dockerfile in the root of the project directory to containerize the application
    - The Dockerfile should use multiple stages:
      - Build stage: Use a .NET SDK image to build the application
@@ -178,6 +187,7 @@ If the build fails, review the error messages and make necessary adjustments to 
 ## Progress Tracking
 
 Maintain a `progress.md` file with the following structure:
+
 ```markdown
 # Containerization Progress
 
@@ -341,6 +351,7 @@ When adapting this example Dockerfile:
 ## Azure Linux Image Variations
 
 ### Azure Linux 3.0
+
 Standard Azure Linux image with full package manager support:
 
 ```dockerfile
@@ -350,6 +361,7 @@ RUN tdnf update -y && tdnf install -y curl ca-certificates && tdnf clean all
 ```
 
 ### Azure Linux 3.0 Distroless
+
 For minimal Azure-optimized containers with reduced attack surface:
 
 ```dockerfile
@@ -359,6 +371,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-azurelinux3.0-distroless AS final
 ```
 
 ### Azure Linux 3.0 Distroless Composite (Optimized)
+
 For best performance on Azure with minimal attack surface:
 
 ```dockerfile
