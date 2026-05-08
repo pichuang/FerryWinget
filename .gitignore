@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test temp directory
+tmp_download/
+
+# Mirror data (runtime generated)
+mirror-data/
+
+# Local config with secrets (not tracked)
+config.local.yaml
+
+# Reports (runtime generated)
+reports/

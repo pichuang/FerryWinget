@@ -1,0 +1,349 @@
+# =============================================================================
+# FerryWinget 設定檔
+# Server 和 Downloader 共用此設定檔
+# YAML 命名慣例: underscore_case (由 YamlDotNet UnderscoredNamingConvention 處理)
+#
+# 敏感設定 (如 github_token) 請放在 config.local.yaml，該檔案不納入版控
+# config.local.yaml 中的設定會自動覆蓋此檔案中的對應欄位
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 來源設定 — 指定從哪個 GitHub repo 取得 winget manifests
+# -----------------------------------------------------------------------------
+source:
+  # GitHub 上的 winget-pkgs 來源 repo (格式: "owner/repo")
+  # 預設值: "microsoft/winget-pkgs"
+  github_repo: "microsoft/winget-pkgs"
+
+  # GitHub Personal Access Token (用於提高 API rate limit)
+  # 留空則使用匿名存取 (rate limit: 60 req/hr)，設定 token 後可提高至 5000 req/hr
+  # 建議使用 fine-grained token，僅授予 Contents: read 權限
+  # 可透過 `gh auth token` 取得目前已認證的 token
+  github_token: ""
+
+  # 要讀取 manifests 的分支名稱
+  # 可用值: 任何有效的 git branch name
+  # 注意: microsoft/winget-pkgs 的預設分支為 "master" (非 "main")
+  # 預設值: "master"
+  manifests_branch: "master"
+
+# -----------------------------------------------------------------------------
+# 儲存設定 — 本地檔案系統路徑
+# -----------------------------------------------------------------------------
+storage:
+  # Mirror 資料根目錄 (相對路徑或絕對路徑皆可)
+  # 預設值: "./mirror-data"
+  root_path: "./mirror-data"
+
+  # 套件 manifest YAML 存放子目錄 (相對於 root_path)
+  # 預設值: "packages"
+  packages_dir: "packages"
+
+  # Installer 二進位檔存放子目錄 (相對於 root_path)
+  # 預設值: "installers"
+  installers_dir: "installers"
+
+  # 下載報告存放子目錄 (相對於 root_path)
+  # 預設值: "reports"
+  reports_dir: "reports"
+
+# -----------------------------------------------------------------------------
+# 篩選設定 — 控制要 mirror 哪些套件
+# 使用 glob pattern 語法，支援 * (任意字元) 和 ? (單一字元)，大小寫不敏感
+# 規則: blocklist 優先權最高，即使套件符合 allowlist 也會被排除
+# -----------------------------------------------------------------------------
+filtering:
+  # 允許清單 — 只下載符合這些 pattern 的套件
+  # 留空 [] 表示允許所有套件 (僅受 blocklist 限制)
+  # 範例:
+  #   - "Microsoft.*"        # 所有 Microsoft 開頭的套件
+  #   - "Git.Git"            # 精確匹配單一套件
+  #   - "Python.Python.*"    # Python 相關套件
+  #   - "7zip.*"             # 7-Zip 相關套件
+  allowlist:
+    - "GitHub.*"
+
+  # 封鎖清單 — 永遠排除符合這些 pattern 的套件 (優先權高於 allowlist)
+  blocklist:
+    # 是否啟用封鎖清單功能
+    enabled: true
+
+    # 依發行者名稱封鎖（匹配 PackageIdentifier 的 Publisher 前綴）
+    publishers: []
+
+    # 依套件識別碼封鎖（支援萬用字元）
+    packages:
+      # Visual Studio Community 版本
+      - "Microsoft.VisualStudio.*.Community"
+      - "Microsoft.VisualStudio.Community"
+
+      # Beta / Preview / Insider / Canary / Dev 版本
+      - "Microsoft.*.Beta"
+      - "Microsoft.*.Preview"
+      - "Microsoft.*.Insider"
+      - "Microsoft.*.Insiders"
+      - "Microsoft.*.Canary"
+      - "Microsoft.*.Dev"
+      - "GitHub.*.Beta"
+
+      # 模擬器
+      - "Microsoft.*.Emulator"
+      - "Microsoft.*.Emulator.*"
+      - "Microsoft.SurfaceDuoEmulator.Android11"
+
+      # 已停止維護 / 已歸檔的 GitHub 專案
+      - "GitHub.Atom"
+      - "GitHub.ClassroomAssistant"
+      - "GitHub.hub"
+      - "GitHub.smimesign"
+
+      # .NET Core / .NET 已 EOL 版本 (僅保留 8, 9, 10)
+      - "Microsoft.DotNet.AspNetCore.2_1"
+      - "Microsoft.DotNet.AspNetCore.2_2"
+      - "Microsoft.DotNet.AspNetCore.2_2_402"
+      - "Microsoft.DotNet.Runtime.2_2"
+      - "Microsoft.DotNet.AspNetCore.3_0"
+      - "Microsoft.DotNet.AspNetCore.3_1"
+      - "Microsoft.DotNet.DesktopRuntime.3_1"
+      - "Microsoft.DotNet.HostingBundle.3_1"
+      - "Microsoft.DotNet.Runtime.3_1"
+      - "Microsoft.DotNet.SDK.3_1"
+      - "Microsoft.DotNet.AspNetCore.5"
+      - "Microsoft.DotNet.DesktopRuntime.5"
+      - "Microsoft.DotNet.HostingBundle.5"
+      - "Microsoft.DotNet.Runtime.5"
+      - "Microsoft.DotNet.SDK.5"
+      - "Microsoft.DotNet.AspNetCore.6"
+      - "Microsoft.DotNet.DesktopRuntime.6"
+      - "Microsoft.DotNet.HostingBundle.6"
+      - "Microsoft.DotNet.Runtime.6"
+      - "Microsoft.DotNet.SDK.6"
+      - "Microsoft.DotNet.AspNetCore.7"
+      - "Microsoft.DotNet.DesktopRuntime.7"
+      - "Microsoft.DotNet.HostingBundle.7"
+      - "Microsoft.DotNet.Runtime.7"
+      - "Microsoft.DotNet.SDK.7"
+      - "Microsoft.DotNet.CodeContracts"
+      - "Microsoft.DotNet.Framework.Redistributable.1_1"
+      - "Microsoft.DotNet.Framework.DeveloperPack.4.5"
+      - "Microsoft.DotNet.Framework.DeveloperPack.4.6"
+
+      # Visual C++ Redistributable 老舊版本 (僅保留 2015+)
+      - "Microsoft.VCRedist.2005.x64"
+      - "Microsoft.VCRedist.2005.x86"
+      - "Microsoft.VCRedist.2008.x64"
+      - "Microsoft.VCRedist.2008.x86"
+      - "Microsoft.VCRedist.2010.x64"
+      - "Microsoft.VCRedist.2010.x86"
+      - "Microsoft.VCRedist.2012.x64"
+      - "Microsoft.VCRedist.2012.x86"
+      - "Microsoft.VCRedist.2013.x64"
+      - "Microsoft.VCRedist.2013.x86"
+
+      # SQL Server 老舊版本 (僅保留 2019+)
+      - "Microsoft.SQLServer.11.ODBC"
+      - "Microsoft.SQLServer.2012.NativeClient"
+      - "Microsoft.SQLServer.2017.Developer"
+      - "Microsoft.SQLServer.2017.Express"
+      - "Microsoft.msodbcsql.11"
+      - "Microsoft.msodbcsql.13"
+
+      # Windows SDK / WDK 老舊版本 (僅保留 22621+)
+      - "Microsoft.WindowsSDK.10.0.17134"
+      - "Microsoft.WindowsSDK.10.0.17763"
+      - "Microsoft.WindowsSDK.10.0.18362"
+      - "Microsoft.WindowsSDK.10.0.19041"
+      - "Microsoft.WindowsSDK.10.0.20348"
+      - "Microsoft.WindowsSDK.10.0.22000"
+      - "Microsoft.WindowsWDK.10.0.19041"
+      - "Microsoft.WindowsWDK.10.0.22000"
+
+      # Windows App Runtime 老舊版本 (僅保留 1.7+)
+      - "Microsoft.WindowsAppRuntime.1.0"
+      - "Microsoft.WindowsAppRuntime.1.1"
+      - "Microsoft.WindowsAppRuntime.1.2"
+      - "Microsoft.WindowsAppRuntime.1.3"
+      - "Microsoft.WindowsAppRuntime.1.4"
+      - "Microsoft.WindowsAppRuntime.1.5"
+      - "Microsoft.WindowsAppRuntime.1.6"
+
+      # WinUI / XAML 老舊版本 (僅保留 2.8+)
+      - "Microsoft.UI.Xaml.2.5"
+      - "Microsoft.UI.Xaml.2.6"
+
+      # OpenJDK 非 LTS 版本 (僅保留 LTS: 11, 17, 21, 25)
+      - "Microsoft.OpenJDK.16"
+
+      # 已停產 / 已棄用的 Microsoft 服務與工具
+      - "Microsoft.16BitInstallShieldSupport"
+      - "Microsoft.Firewire1394LegacyDriver"
+      - "Microsoft.MSNExplorer"
+      - "Microsoft.XNARedist"
+      - "Microsoft.WindowsJournal"
+      - "Microsoft.HyperlapsePro"
+      - "Microsoft.ProjectMyScreen"
+      - "Microsoft.SmallBasic"
+      - "Microsoft.MakeBingYourSearchEngine"
+      - "Microsoft.NetMon"
+      - "Microsoft.vott"
+      - "Microsoft.webpicmd"
+      - "Microsoft.WCFDataServices50.ODatav3"
+      - "Microsoft.IronPython.2"
+      - "Microsoft.ESRPWingetTest"
+      - "Microsoft.WinGetStudio.Experimental"
+      - "Microsoft.BingWallpaper"
+      - "Microsoft.Gaming.*"
+      - "Microsoft.GameInput"
+      - "Microsoft.msmpi"
+      - "Microsoft.msmpisdk"
+
+      # 已歸檔 / 已停產的 GitHub 專案與工具
+      - "Microsoft.BotFrameworkComposer"
+      - "Microsoft.BotFrameworkEmulator"
+      - "Microsoft.AIShell"
+      - "Microsoft.DirectAccessCTST"
+      - "Microsoft.FRSDiag"
+
+      # 高資安風險工具
+      - "Microsoft.devtunnel"
+
+      # 已棄用的 Azure 工具
+      - "Microsoft.Azure.StorageEmulator"
+      - "Microsoft.Azure.Aztfy"
+      - "Microsoft.Azure.aks-engine-azurestack"
+      - "Microsoft.AzureMediaServicesExplorer"
+      - "Microsoft.AzureDevOpsOfficeIntegration.2019"
+
+      # 已棄用的 Visual Studio 老舊版本 (僅保留 2022)
+      - "Microsoft.VisualStudio.2017.Enterprise"
+      - "Microsoft.VisualStudio.2019.BuildTools"
+      - "Microsoft.VisualStudio.2019.Enterprise"
+      - "Microsoft.VisualStudio.2019.Professional"
+      - "Microsoft.VisualStudio.Enterprise"
+      - "Microsoft.VisualStudio.Professional"
+      - "Microsoft.VisualStudio.BuildTools"
+      - "Microsoft.VisualStudio.OnecoreMsvsmon"
+      - "Microsoft.VisualStudio.RemoteTools"
+      - "Microsoft.BuildTools2015"
+
+      # 其他已棄用或不常用工具
+      - "Microsoft.VFSforGit"
+      - "Microsoft.ServerSpeechPlatformRuntime"
+      - "Microsoft.MixedRealityFeatureTool"
+      - "Microsoft.AccessDatabaseEngine.2016"
+
+# -----------------------------------------------------------------------------
+# 版本保留策略 — 控制每個套件保留多少個主要版本
+# -----------------------------------------------------------------------------
+retention:
+  # 每個套件保留的最大主要版本數量
+  # 例如設為 5，則保留最新的 5 個 major version 下的所有版本
+  # 較舊的 major version 會被清理
+  # 可用範圍: 正整數 (建議 1-10)
+  # 預設值: 5
+  max_major_versions: 5
+
+# -----------------------------------------------------------------------------
+# 下載器設定 — 控制 Downloader CLI 的下載行為
+# -----------------------------------------------------------------------------
+downloader:
+  # 同時下載的最大並行數量
+  # 可用範圍: 正整數 (建議 1-32，視網路頻寬與系統資源調整)
+  # 預設值: 16
+  max_concurrency: 16
+
+  # 單一檔案的下載逾時時間 (秒)
+  # 可用範圍: 正整數 (建議 60-600)
+  # 預設值: 300
+  download_timeout_seconds: 300
+
+  # 下載失敗時的重試次數
+  # 可用範圍: 正整數 (建議 1-5)
+  # 預設值: 3
+  retry_count: 3
+
+  # HTTP 請求的 User-Agent 標頭
+  # 預設值: "FerryWinget/1.0"
+  user_agent: "FerryWinget/1.0"
+
+  # 套件列舉結果的本地快取有效期 (分鐘)
+  # 快取檔案儲存於 {storage.root_path}/.cache/package-list-cache.json
+  # 設為 0 可停用快取
+  # 預設值: 30
+  cache_ttl_minutes: 30
+
+# -----------------------------------------------------------------------------
+# Server 設定 — 控制內網 winget REST source server (ASP.NET Core)
+# -----------------------------------------------------------------------------
+server:
+  # HTTP 監聽埠號
+  # 可用範圍: 1-65535 (建議使用 1024 以上的非特權埠)
+  # 預設值: 8080
+  port: 8080
+
+  # winget source 識別名稱 (顯示在 winget source list 中)
+  # 預設值: "FerryWinget"
+  source_identifier: "FerryWinget"
+
+  # 支援的 winget REST API 版本清單
+  # Windows 11 / Server 2022+ 用戶端會根據此清單協商 API 版本
+  # 可用值: "1.4.0", "1.7.0", "1.9.0"
+  # 預設值: ["1.4.0", "1.7.0", "1.9.0"]
+  supported_api_versions:
+    - "1.4.0"
+    - "1.7.0"
+    - "1.9.0"
+
+# -----------------------------------------------------------------------------
+# Azure Firewall 設定 — 自動部署 Firewall Policy 規則 (允許 installer 下載 FQDN)
+# 由 Downloader 搭配 --dry-run 使用，透過 az CLI 部署
+# -----------------------------------------------------------------------------
+firewall:
+  # 是否啟用 Azure Firewall Policy 自動部署
+  # 可用值: true / false
+  # 預設值: false
+  enabled: true
+
+  # Azure Firewall Policy 所在的資源群組名稱
+  resource_group: "rg-firewall"
+
+  # Azure Firewall Policy 名稱
+  policy_name: "fw-policy-winget"
+
+  # Rule Collection Group 名稱
+  # 預設值: "rcg-winget-mirror"
+  rule_collection_group_name: "rcg-winget-mirror"
+
+  # TLS Inspection Rule Collection 名稱 (用於 HTTPS 流量)
+  # 預設值: "rc-winget-tls"
+  tls_rule_collection_name: "rc-winget-tls"
+
+  # FQDN-only Rule Collection 名稱 (用於不需 TLS inspection 的流量)
+  # 預設值: "rc-winget-fqdn"
+  fqdn_rule_collection_name: "rc-winget-fqdn"
+
+  # TLS Rule Collection 優先權 (數字越小優先權越高)
+  # 可用範圍: 100-65000
+  # 預設值: 500
+  tls_rule_collection_priority: 500
+
+  # FQDN Rule Collection 優先權
+  # 可用範圍: 100-65000 (須與 tls_rule_collection_priority 不同)
+  # 預設值: 501
+  fqdn_rule_collection_priority: 501
+
+  # 允許通過防火牆的來源 IP 位址/CIDR 清單
+  # 範例:
+  #   - "10.0.0.0/8"         # 整個 10.x.x.x 私有網段
+  #   - "172.16.0.0/12"      # 172.16-31.x.x 私有網段
+  #   - "192.168.1.0/24"     # 特定子網路
+  source_addresses:
+    - "10.0.0.0/8"
+
+# -----------------------------------------------------------------------------
+# 時區設定 — 影響所有時間戳記的顯示格式
+# -----------------------------------------------------------------------------
+# 使用 IANA 時區名稱
+# 範例: "Asia/Taipei", "Asia/Tokyo", "America/New_York", "Europe/London", "UTC"
+# 預設值: "Asia/Taipei" (UTC+8)
+timezone: "Asia/Taipei"

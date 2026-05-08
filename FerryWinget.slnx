@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FerryWinget.Core/FerryWinget.Core.csproj" />
+    <Project Path="src/FerryWinget.Downloader/FerryWinget.Downloader.csproj" />
+    <Project Path="src/FerryWinget.Server/FerryWinget.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FerryWinget.Core.Tests/FerryWinget.Core.Tests.csproj" />
+    <Project Path="tests/FerryWinget.Downloader.Tests/FerryWinget.Downloader.Tests.csproj" />
+    <Project Path="tests/FerryWinget.Server.Tests/FerryWinget.Server.Tests.csproj" />
+  </Folder>
+</Solution>
