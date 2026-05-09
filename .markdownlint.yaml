@@ -19,3 +19,8 @@ MD033: false
 # MD041 - First line in a file should be a top-level heading
 # SKILL.md 等檔案以 YAML front matter 開頭
 MD041: false
+
+# MD060 - Table column style
+# 停用表格對齊檢查，因 CJK 全形字元佔 2 個顯示寬度，
+# 導致 markdownlint 無法正確計算欄寬對齊
+MD060: false

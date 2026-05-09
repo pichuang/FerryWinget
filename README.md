@@ -101,17 +101,17 @@ firewall:
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/information` | GET | Server 資訊、支援 API 版本 |
-| `/api/manifestSearch` | POST | 套件搜尋 (keyword, filters, inclusions) |
-| `/api/packageManifests/{id}` | GET | 完整 manifest (URL rewrite 到內網) |
-| `/api/installers/{id}/{ver}/{arch}/{file}` | GET | Installer 二進位下載 |
-| `/` | GET | Web UI 搜尋介面 |
+| Endpoint                                   | Method | Description                             |
+| ------------------------------------------ | ------ | --------------------------------------- |
+| `/api/information`                         | GET    | Server 資訊、支援 API 版本              |
+| `/api/manifestSearch`                      | POST   | 套件搜尋 (keyword, filters, inclusions) |
+| `/api/packageManifests/{id}`               | GET    | 完整 manifest (URL rewrite 到內網)      |
+| `/api/installers/{id}/{ver}/{arch}/{file}` | GET    | Installer 二進位下載                    |
+| `/`                                        | GET    | Web UI 搜尋介面                         |
 
 ## 專案結構
 
-```
+```text
 src/
   FerryWinget.Core/           → 共用函式庫 (config, models, filtering, storage)
   FerryWinget.Downloader/     → 外網下載器 CLI
@@ -128,10 +128,10 @@ docs/
 
 ## 文件
 
-| 文件 | 對象 |
-|------|------|
-| [開發人員手冊](docs/developer-guide.md) | 架構、測試、容器化、新增功能指南 |
-| [套件維護人員手冊](docs/operations-guide.md) | 部署、日常維運、套件管理、Firewall、Windows Client |
+| 文件                                             | 對象                                                           |
+| ------------------------------------------------ | -------------------------------------------------------------- |
+| [開發人員手冊](docs/developer-guide.md)           | 架構、測試、容器化、新增功能指南                               |
+| [套件維護人員手冊](docs/operations-guide.md)  | 部署、日常維運、套件管理、Firewall、Windows Client              |
 
 ## 技術堆疊
 

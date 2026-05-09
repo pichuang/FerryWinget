@@ -36,7 +36,6 @@ public sealed class TestServerFixture : IDisposable
             storage:
               root_path: "{TestDataRoot.Replace("\\", "/")}/mirror-data"
               packages_dir: "packages"
-              installers_dir: "installers"
               reports_dir: "reports"
             filtering:
               allowlist:

@@ -47,7 +47,7 @@ public class Program
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.Source.GithubToken);
 
         // Setup services
-        var store = new FileSystemPackageStore(config.Storage.RootPath, config.Storage.PackagesDir, config.Storage.InstallersDir);
+        var store = new FileSystemPackageStore(config.Storage.RootPath, config.Storage.PackagesDir);
         var filter = new PackageFilter(config.Filtering);
         var retention = new VersionRetentionService(config.Retention);
         var downloader = new InstallerDownloader(http, store, config.Downloader);
@@ -122,9 +122,17 @@ public class Program
                         var installerManifest = yamlDeserializer.Deserialize<InstallerYamlManifest>(installerYaml);
                         if (installerManifest?.Installers is not null)
                         {
+                            var excludedArchs = config.Downloader.ExcludedArchitectures
+                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
                             foreach (var inst in installerManifest.Installers)
                             {
                                 if (string.IsNullOrEmpty(inst.InstallerUrl)) continue;
+
+                                // Skip excluded architectures
+                                var arch = inst.Architecture ?? "x64";
+                                if (excludedArchs.Contains(arch)) continue;
+
                                 allInstallerUrls.Add(inst.InstallerUrl);
                                 var uri = new Uri(inst.InstallerUrl);
                                 var fileName = Path.GetFileName(uri.LocalPath);
@@ -132,7 +140,7 @@ public class Program
                                 {
                                     PackageId = pkg.PackageIdentifier,
                                     Version = ver.Version,
-                                    Architecture = inst.Architecture ?? "x64",
+                                    Architecture = arch,
                                     InstallerUrl = inst.InstallerUrl,
                                     FileName = fileName,
                                     ExpectedSha256 = inst.InstallerSha256 ?? ""
@@ -148,13 +156,43 @@ public class Program
             }
 
             Console.WriteLine($"  下載 {downloadRequests.Count} 個 installer...");
+            var progressLock = new object();
             var results = await downloader.DownloadBatchAsync(
                 downloadRequests,
-                onProgress: (done, total) => Console.WriteLine($"  下載進度: [{done}/{total}]"));
-            var succeeded = results.Count(r => r.Success);
+                onProgress: (done, total, result) =>
+                {
+                    var pct = (int)(done * 100.0 / total);
+                    var barLen = 30;
+                    var filled = (int)(barLen * done / (double)total);
+                    var bar = new string('█', filled) + new string('░', barLen - filled);
+                    var status = result.Skipped ? "略過" : result.Success ? "完成" : "失敗";
+                    var name = $"{result.Request.PackageId}/{result.Request.Architecture}";
+                    if (name.Length > 40) name = name[..37] + "...";
+
+                    lock (progressLock)
+                    {
+                        Console.Write($"\r  [{bar}] {pct,3}% ({done}/{total}) {status}: {name,-40}");
+                        if (done == total) Console.WriteLine();
+                    }
+                });
+            var succeeded = results.Count(r => r.Success && !r.Skipped);
             var skipped = results.Count(r => r.Skipped);
-            var failed = results.Count(r => !r.Success);
-            Console.WriteLine($"  成功: {succeeded}, 略過 (已存在): {skipped}, 失敗: {failed}");
+            var failedList = results.Where(r => !r.Success).ToList();
+            Console.WriteLine($"  成功: {succeeded}, 略過 (已存在): {skipped}, 失敗: {failedList.Count}");
+
+            // Show failed downloads detail
+            if (failedList.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("  ⚠️ 下載失敗的檔案:");
+                foreach (var f in failedList)
+                {
+                    Console.WriteLine($"    ✗ {f.Request.PackageId} {f.Request.Version} ({f.Request.Architecture})");
+                    Console.WriteLine($"      URL: {f.Request.InstallerUrl}");
+                    Console.WriteLine($"      原因: {f.Error}");
+                }
+                Console.WriteLine();
+            }
 
             // Step 5: URL analysis
             Console.WriteLine("步驟 5: 分析 installer URL FQDN...");
@@ -193,7 +231,12 @@ public class Program
             }
 
             Console.WriteLine();
-            Console.WriteLine($"完成! 時間: {TaipeiTimeHelper.FormatTimestamp()}");
+            if (failedList.Count > 0)
+            {
+                Console.WriteLine($"⚠️ 完成 (有 {failedList.Count} 個下載失敗)  時間: {TaipeiTimeHelper.FormatTimestamp()}");
+                return 0; // Non-fatal — continue with partial results
+            }
+            Console.WriteLine($"✅ 完成! 時間: {TaipeiTimeHelper.FormatTimestamp()}");
             return 0;
         }
         catch (Exception ex)

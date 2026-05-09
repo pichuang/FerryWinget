@@ -17,7 +17,6 @@ public class ConfigLoaderTests
             storage:
               root_path: "./data"
               packages_dir: "pkgs"
-              installers_dir: "inst"
               reports_dir: "rpt"
             filtering:
               allowlist:

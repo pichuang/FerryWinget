@@ -35,13 +35,10 @@ storage:
   # 預設值: "./mirror-data"
   root_path: "./mirror-data"
 
-  # 套件 manifest YAML 存放子目錄 (相對於 root_path)
+  # 套件存放子目錄 (相對於 root_path)
+  # 結構: {packages_dir}/{PackageId}/{Version}/ 下放 manifest YAML + installer 二進位
   # 預設值: "packages"
   packages_dir: "packages"
-
-  # Installer 二進位檔存放子目錄 (相對於 root_path)
-  # 預設值: "installers"
-  installers_dir: "installers"
 
   # 下載報告存放子目錄 (相對於 root_path)
   # 預設值: "reports"
@@ -304,6 +301,12 @@ downloader:
   # 設為 0 可停用快取
   # 預設值: 30
   cache_ttl_minutes: 30
+
+  # 排除的架構清單 — 不下載這些架構的 installer
+  # 可用值: x86, x64, arm, arm64, neutral
+  # 預設值: ["arm64"]
+  excluded_architectures:
+    - "arm64"
 
 # -----------------------------------------------------------------------------
 # Server 設定 — 控制內網 winget REST source server (ASP.NET Core)

@@ -25,7 +25,6 @@ public sealed class StorageConfig
 {
     public string RootPath { get; set; } = "./mirror-data";
     public string PackagesDir { get; set; } = "packages";
-    public string InstallersDir { get; set; } = "installers";
     public string ReportsDir { get; set; } = "reports";
 }
 
@@ -59,6 +58,7 @@ public sealed class DownloaderConfig
     public int RetryCount { get; set; } = 3;
     public string UserAgent { get; set; } = "FerryWinget/1.0";
     public int CacheTtlMinutes { get; set; } = 30;
+    public List<string> ExcludedArchitectures { get; set; } = ["arm64"];
 }
 
 public sealed class ServerConfig

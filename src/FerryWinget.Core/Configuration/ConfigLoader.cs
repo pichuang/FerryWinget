@@ -73,8 +73,6 @@ public static class ConfigLoader
             baseConfig.Storage.RootPath = overrideConfig.Storage.RootPath;
         if (overrideConfig.Storage.PackagesDir != defaults.Storage.PackagesDir)
             baseConfig.Storage.PackagesDir = overrideConfig.Storage.PackagesDir;
-        if (overrideConfig.Storage.InstallersDir != defaults.Storage.InstallersDir)
-            baseConfig.Storage.InstallersDir = overrideConfig.Storage.InstallersDir;
         if (overrideConfig.Storage.ReportsDir != defaults.Storage.ReportsDir)
             baseConfig.Storage.ReportsDir = overrideConfig.Storage.ReportsDir;
 

@@ -22,13 +22,13 @@
 FerryWinget 是企業內部 Windows Package Manager (winget) 鏡像系統，由兩個主要元件組成：
 
 | 元件 | 部署環境 | 用途 |
-|------|---------|------|
+| ------ | --------- | ------ |
 | **Downloader** | 可連外網的主機 | 從 GitHub 下載套件，產生報告，更新 Firewall 規則 |
 | **Server** | 內網伺服器 | 提供 winget REST source API，讓 Windows 機器安裝套件 |
 
 ### 運作流程
 
-```
+```text
                      ┌─────────────┐
                      │  GitHub     │
                      │  winget-pkgs│
@@ -61,7 +61,7 @@ FerryWinget 是企業內部 Windows Package Manager (winget) 鏡像系統，由�
 
 ### 檔案系統結構
 
-```
+```text
 mirror-data/                              # 由 config.yaml storage.root_path 設定
 ├── packages/                             # manifest YAML 檔案
 │   ├── GitHub.Desktop/
@@ -164,13 +164,13 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 
 ### 步驟 5: 啟動內網 Server
 
-**方式 A: 直接執行**
+#### 方式 A: 直接執行
 
 ```bash
 dotnet run --project src/FerryWinget.Server -- config-production.yaml
 ```
 
-**方式 B: 容器執行 (建議)**
+#### 方式 B: 容器執行 (建議)
 
 ```bash
 # 建置容器
@@ -238,7 +238,7 @@ podman restart ferry-winget
 每次 Downloader 執行後產生的報告：
 
 | 檔案 | 內容 |
-|------|------|
+| ------ | ------ |
 | `reports/full-package-list.md` | 完整套件清單 (預計下載 + 被封鎖 + 略過) |
 | `reports/diff-report.md` | 本次差異 (新增/更新/移除) |
 | `reports/firewall-fqdns.md` | 所有需要的 FQDN 清單 |
@@ -323,7 +323,7 @@ Downloader 會分析所有 installer URL 的 FQDN（包含 HTTP redirect 追蹤�
 產生兩個獨立的 Rule Collection：
 
 | Rule Collection | 用途 | TLS Inspection |
-|----------------|------|----------------|
+| ---------------- | ------ | ---------------- |
 | `rc-winget-tls` | 需要深度封包檢測的環境 | ✅ 啟用 |
 | `rc-winget-fqdn` | 僅 SNI-based FQDN 過濾 | ❌ 停用 |
 
@@ -392,7 +392,7 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 以下是常見的 winget 套件下載所需 FQDN：
 
 | FQDN | 用途 |
-|------|------|
+| ------ | ------ |
 | `github.com` | GitHub 套件 release 頁面 |
 | `objects.githubusercontent.com` | GitHub release 實際下載 CDN |
 | `github-releases.githubusercontent.com` | GitHub release 下載 |
@@ -407,7 +407,7 @@ dotnet run --project src/FerryWinget.Downloader -- config-production.yaml
 
 ### 啟動方式
 
-**容器方式 (建議)**
+#### 容器方式 (建議)
 
 ```bash
 podman run -d --name ferry-winget \
@@ -418,7 +418,7 @@ podman run -d --name ferry-winget \
   ferry-winget-server:latest
 ```
 
-**直接執行方式**
+#### 直接執行方式
 
 ```bash
 dotnet run --project src/FerryWinget.Server -- /etc/ferry-winget/config.yaml
@@ -518,7 +518,7 @@ winget source add -n $sourceName -a $sourceUrl -t "Microsoft.Rest"
 ### 支援的 Windows 版本
 
 | Windows 版本 | winget 版本 | 支援狀態 |
-|-------------|-------------|---------|
+| ------------- | ------------- | --------- |
 | Windows 11 | 內建 | ✅ |
 | Windows Server 2025 | 內建 | ✅ |
 | Windows Server 2022 | 需安裝 | ✅ (安裝 App Installer) |
@@ -547,7 +547,7 @@ podman run -d --name ferry-winget \
 ### 關鍵指標
 
 | 指標 | 來源 | 說明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | HTTP request duration | ASP.NET Core instrumentation | API 回應時間 |
 | HTTP request count | ASP.NET Core instrumentation | 各 endpoint 的請求數 |
 | Outbound HTTP calls | HTTP client instrumentation | 外部 HTTP 呼叫 (Downloader) |
@@ -573,7 +573,7 @@ du -sh mirror-data/installers/* | sort -rh | head -20
 完整套件清單報告，分為三個區塊：
 
 | 區塊 | 說明 |
-|------|------|
+| ------ | ------ |
 | 預計下載套件 | 通過 allowlist 且未被 blocklist 封鎖的套件，含版本列表 |
 | 被封鎖套件 | 匹配 blocklist 的套件，顯示匹配的 pattern |
 | 略過套件 | 不在 allowlist 中的套件 (僅計數) |
@@ -583,7 +583,7 @@ du -sh mirror-data/installers/* | sort -rh | head -20
 與前次同步的差異：
 
 | 區塊 | 說明 |
-|------|------|
+| ------ | ------ |
 | 新增套件 | 新出現在 mirror 中的套件 |
 | 更新套件 | 已存在但有新版本的套件 |
 | 移除套件 | 不再被鏡像的套件 |
@@ -643,49 +643,49 @@ podman restart ferry-winget
 
 ## 常見問題
 
-**Q: 磁碟空間不足**
+### Q: 磁碟空間不足
 
-```
+```text
 A: 減少 retention.max_major_versions 的數值 (例如從 5 改為 3)
    然後重新執行 Downloader，舊版本會被標記為移除
    手動刪除 mirror-data/installers/ 中多餘的版本目錄
 ```
 
-**Q: 新增套件後 winget 搜尋不到**
+### Q: 新增套件後 winget 搜尋不到
 
-```
+```text
 A: 1. 確認套件已在 mirror-data/packages/ 中
    2. 重啟 Server (podman restart ferry-winget)
    3. 在 Windows 執行 winget source update
 ```
 
-**Q: winget install 下載失敗**
+### Q: winget install 下載失敗
 
-```
+```text
 A: 1. 確認 installer 檔案存在於 mirror-data/installers/ 中
    2. 檢查 Server 日誌: podman logs ferry-winget
    3. 手動測試: curl http://<server>:8080/api/installers/<id>/<ver>/<arch>/<file>
 ```
 
-**Q: Downloader 執行中斷，部分下載**
+### Q: Downloader 執行中斷，部分下載
 
-```
+```text
 A: 直接重新執行 Downloader。已下載的檔案會被跳過 (InstallerExistsAsync 檢查)。
    SHA256 驗證確保只有完整正確的檔案被保存。
 ```
 
-**Q: 某個套件有安全漏洞，需要緊急封鎖**
+### Q: 某個套件有安全漏洞，需要緊急封鎖
 
-```
+```text
 A: 1. 將套件加入 config.yaml 的 blocklist
    2. 手動刪除 mirror-data/ 中對應的檔案
    3. 重啟 Server
    4. 通知使用者移除該套件
 ```
 
-**Q: Azure Firewall Policy 更新後，下載仍被封鎖**
+### Q: Azure Firewall Policy 更新後，下載仍被封鎖
 
-```
+```text
 A: 1. 確認 Firewall Policy 已正確套用到 Firewall
    2. 檢查 reports/firewall-fqdns.md 的 FQDN 清單是否完整
    3. 部分 CDN 可能使用動態域名，需手動新增

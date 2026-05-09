@@ -399,9 +399,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-azurelinux3.0-distroless-composite AS 
 
 ## Currently Supported .NET Versions (as of May 2026)
 
-| Version | Support Type | Latest Runtime | Latest SDK |
-|---------|-------------|----------------|------------|
-| .NET 10.0 | Long-Term Support (LTS) | 10.0.7 | 10.0.203 |
-| .NET 9.0 | Standard Term Support (STS) | 9.0.15 | 9.0.313 |
-| .NET 8.0 | Long-Term Support (LTS) | 8.0.26 | 8.0.420 |
-| .NET 11.0 | Preview | 11.0.0-preview.3 | 11.0.100-preview.3 |
+| Version   | Support Type                | Latest Runtime       | Latest SDK             |
+| --------- | --------------------------- | -------------------- | ---------------------- |
+| .NET 10.0 | Long-Term Support (LTS)     | 10.0.7               | 10.0.203               |
+| .NET 9.0  | Standard Term Support (STS) | 9.0.15               | 9.0.313                |
+| .NET 8.0  | Long-Term Support (LTS)     | 8.0.26               | 8.0.420                |
+| .NET 11.0 | Preview                     | 11.0.0-preview.3     | 11.0.100-preview.3     |

@@ -26,7 +26,7 @@ if (!builder.Services.Any(d => d.ServiceType == typeof(FerryConfig)))
     builder.Services.AddSingleton(config.Server);
 
     var store = new FileSystemPackageStore(
-        config.Storage.RootPath, config.Storage.PackagesDir, config.Storage.InstallersDir);
+        config.Storage.RootPath, config.Storage.PackagesDir);
     builder.Services.AddSingleton<IPackageStore>(store);
 }
 

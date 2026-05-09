@@ -47,6 +47,7 @@ public sealed class InstallerDownloader
                 };
             }
 
+            Exception? lastException = null;
             for (int attempt = 1; attempt <= _retryCount; attempt++)
             {
                 try
@@ -75,17 +76,51 @@ public sealed class InstallerDownloader
 
                     return new DownloadResult { Request = request, Success = true };
                 }
-                catch (Exception ex) when (attempt < _retryCount && ex is not OperationCanceledException)
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), ct);
+                    // Global cancellation — propagate immediately
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    if (attempt < _retryCount)
+                        await Task.Delay(TimeSpan.FromSeconds(attempt * 2), ct);
                 }
             }
+
+            var errorMsg = lastException switch
+            {
+                TaskCanceledException or OperationCanceledException =>
+                    $"下載逾時 ({_timeout.TotalSeconds}s)",
+                HttpRequestException httpEx =>
+                    $"HTTP 錯誤: {httpEx.StatusCode} {httpEx.Message}",
+                _ => lastException?.Message ?? "Unknown error"
+            };
 
             return new DownloadResult
             {
                 Request = request,
                 Success = false,
-                Error = $"Failed after {_retryCount} attempts"
+                Error = $"重試 {_retryCount} 次後失敗 — {errorMsg}"
+            };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return new DownloadResult
+            {
+                Request = request,
+                Success = false,
+                Error = "作業已取消"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new DownloadResult
+            {
+                Request = request,
+                Success = false,
+                Error = $"未預期錯誤: {ex.Message}"
             };
         }
         finally
@@ -96,7 +131,7 @@ public sealed class InstallerDownloader
 
     public async Task<List<DownloadResult>> DownloadBatchAsync(
         IEnumerable<DownloadRequest> requests,
-        Action<int, int>? onProgress = null,
+        Action<int, int, DownloadResult>? onProgress = null,
         CancellationToken ct = default)
     {
         var requestList = requests.ToList();
@@ -109,8 +144,7 @@ public sealed class InstallerDownloader
             var result = await DownloadAsync(r, ct);
             results[index] = result;
             var current = Interlocked.Increment(ref completed);
-            if (current % 100 == 0 || current == total)
-                onProgress?.Invoke(current, total);
+            onProgress?.Invoke(current, total, result);
             return result;
         });
 
