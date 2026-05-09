@@ -14,7 +14,7 @@
 
 ```bash
 dotnet build                    # 建置全部
-dotnet test                     # 執行全部 61 個測試
+dotnet test                     # 執行全部 62 個測試
 dotnet test --filter "FullyQualifiedName~PackageFilterTests.Blocklist_HasHighestPriority"  # 單一測試
 ```
 
@@ -67,6 +67,7 @@ Downloader 分析所有 installer URL 的 FQDN（含 redirect 追蹤），自動
 - **TLS inspection** (`rc-winget-tls`) — `enable-tls-inspection true`
 - **FQDN-only** (`rc-winget-fqdn`) — `enable-tls-inspection false`
 - 支援 `--dry-run` 模式（只輸出命令，不執行）
+- 來源支援 `source_ip_groups` (Azure IP Groups) 或 `source_addresses` (CIDR)，IP Groups 優先
 
 ## 設定檔
 

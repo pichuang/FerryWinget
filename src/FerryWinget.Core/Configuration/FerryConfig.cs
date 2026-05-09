@@ -78,5 +78,6 @@ public sealed class FirewallConfig
     public string FqdnRuleCollectionName { get; set; } = "rc-winget-fqdn";
     public int TlsRuleCollectionPriority { get; set; } = 500;
     public int FqdnRuleCollectionPriority { get; set; } = 501;
-    public List<string> SourceAddresses { get; set; } = ["10.0.0.0/8"];
+    public List<string> SourceAddresses { get; set; } = [];
+    public List<string> SourceIpGroups { get; set; } = [];
 }

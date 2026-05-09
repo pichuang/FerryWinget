@@ -16,7 +16,7 @@ public class FirewallPolicyDeployerTests
         FqdnRuleCollectionName = "rc-fqdn",
         TlsRuleCollectionPriority = 500,
         FqdnRuleCollectionPriority = 501,
-        SourceAddresses = ["10.0.0.0/8"]
+        SourceIpGroups = ["ipg-v-a", "ipg-v-b"]
     };
 
     [Fact]
@@ -115,7 +115,7 @@ public class FirewallPolicyDeployerTests
     }
 
     [Fact]
-    public async Task Deploy_CommandsContainSourceAddresses()
+    public async Task Deploy_CommandsContainSourceIpGroups()
     {
         var executed = new List<string>();
         var deployer = new FirewallPolicyDeployer(
@@ -129,7 +129,32 @@ public class FirewallPolicyDeployerTests
 
         await deployer.DeployAsync(["test.com"]);
 
+        executed[1].Should().Contain("--source-ip-groups");
+        executed[1].Should().Contain("ipg-v-a");
+        executed[1].Should().Contain("ipg-v-b");
+        executed[2].Should().Contain("--source-ip-groups");
+    }
+
+    [Fact]
+    public async Task Deploy_FallsBackToSourceAddresses()
+    {
+        var config = CreateTestConfig();
+        config.SourceIpGroups = [];
+        config.SourceAddresses = ["10.0.0.0/8"];
+
+        var executed = new List<string>();
+        var deployer = new FirewallPolicyDeployer(
+            config,
+            dryRun: false,
+            executeCommand: (prog, args) =>
+            {
+                executed.Add(args);
+                return Task.FromResult((0, "ok", ""));
+            });
+
+        await deployer.DeployAsync(["test.com"]);
+
+        executed[1].Should().Contain("--source-addresses");
         executed[1].Should().Contain("10.0.0.0/8");
-        executed[2].Should().Contain("10.0.0.0/8");
     }
 }

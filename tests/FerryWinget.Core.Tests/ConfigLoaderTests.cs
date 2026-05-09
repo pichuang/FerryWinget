@@ -49,6 +49,9 @@ public class ConfigLoaderTests
               fqdn_rule_collection_priority: 101
               source_addresses:
                 - "192.168.0.0/16"
+              source_ip_groups:
+                - "ipg-v-a"
+                - "ipg-v-b"
             timezone: "Asia/Taipei"
             """;
 
@@ -67,6 +70,7 @@ public class ConfigLoaderTests
         config.Firewall.ResourceGroup.Should().Be("rg-test");
         config.Firewall.PolicyName.Should().Be("fw-test");
         config.Firewall.SourceAddresses.Should().Contain("192.168.0.0/16");
+        config.Firewall.SourceIpGroups.Should().BeEquivalentTo(["ipg-v-a", "ipg-v-b"]);
         config.Timezone.Should().Be("Asia/Taipei");
     }
 

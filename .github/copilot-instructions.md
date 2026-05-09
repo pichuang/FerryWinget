@@ -10,7 +10,7 @@
 # Build all
 dotnet build
 
-# Run all tests (61 tests across 3 projects)
+# Run all tests (62 tests across 3 projects)
 dotnet test
 
 # Run single test project
@@ -51,12 +51,14 @@ config.yaml                   → 共用設定檔
 
 ### Key Components
 
-- **PackageFilter** (`Core/Filtering/`) — Glob pattern allowlist/blocklist, blocklist 優先權最高
-- **FileSystemPackageStore** (`Core/Storage/`) — 本地檔案系統套件儲存
+- **PackageFilter** (`Core/Filtering/`) — Glob pattern allowlist/blocklist (structured blocklist with `enabled`/`publishers`/`packages`), blocklist 優先權最高
+- **FileSystemPackageStore** (`Core/Storage/`) — 扁平式檔案系統套件儲存 (`{PackageId}/{Version}/` 下放 manifest + installer)
 - **GitHubManifestClient** (`Downloader/Services/`) — GitHub Tree API 列舉 winget-pkgs manifests，支援本地快取 (TTL 30min)
+- **InstallerDownloader** (`Downloader/Services/`) — SemaphoreSlim(16) 並行串流下載 + SHA256 驗證 + 重試 + 架構排除
 - **UrlAnalyzer** (`Downloader/Services/`) — 從 InstallerUrl 提取 FQDN + redirect 追蹤
-- **FirewallPolicyDeployer** (`Downloader/Services/`) — Azure Firewall Policy 部署 (TLS + FQDN-only rule collections)，支援 --dry-run
+- **FirewallPolicyDeployer** (`Downloader/Services/`) — Azure Firewall Policy 部署 (TLS + FQDN-only)，支援 IP Groups + --dry-run
 - **VersionRetentionService** (`Downloader/Services/`) — 階層式版本保留策略 (Major→Minor→Patch) + 安全機制 (grace period + pinned tags)
+- **ReportGenerator** (`Downloader/Services/`) — Markdown 報告產生 (full list + diff + FQDN + Firewall Policy 設定)
 - **SearchService** (`Server/Services/`) — winget REST search 邏輯 (Query/Inclusions/Filters)
 - **PackageIndexService** (`Server/Services/`) — 本地套件記憶體索引
 

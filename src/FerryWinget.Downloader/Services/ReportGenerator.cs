@@ -147,7 +147,7 @@ public sealed class ReportGenerator
     /// <summary>
     /// Generates firewall FQDN report grouped by domain.
     /// </summary>
-    public string GenerateFirewallFqdnReport(UrlAnalysisResult analysis)
+    public string GenerateFirewallFqdnReport(UrlAnalysisResult analysis, FerryWinget.Core.Configuration.FirewallConfig? firewallConfig = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# FerryWinget — Firewall FQDN 清單");
@@ -155,6 +155,37 @@ public sealed class ReportGenerator
         sb.AppendLine($"> 產生時間: {TaipeiTimeHelper.FormatTimestamp()}");
         sb.AppendLine($"> 分析 URL 數量: {analysis.TotalUrlsAnalyzed}");
         sb.AppendLine();
+
+        // Azure Firewall Policy 設定資訊
+        if (firewallConfig is not null)
+        {
+            sb.AppendLine("## Azure Firewall Policy 設定");
+            sb.AppendLine();
+            sb.AppendLine("| 項目 | 值 |");
+            sb.AppendLine("|------|------|");
+            sb.AppendLine($"| 啟用狀態 | `{(firewallConfig.Enabled ? "✅ 啟用" : "❌ 停用")}` |");
+            sb.AppendLine($"| Resource Group | `{firewallConfig.ResourceGroup}` |");
+            sb.AppendLine($"| Policy Name | `{firewallConfig.PolicyName}` |");
+            sb.AppendLine($"| Rule Collection Group | `{firewallConfig.RuleCollectionGroupName}` |");
+            if (firewallConfig.SourceIpGroups.Count > 0)
+                sb.AppendLine($"| Source IP Groups | `{string.Join(", ", firewallConfig.SourceIpGroups)}` |");
+            if (firewallConfig.SourceAddresses.Count > 0)
+                sb.AppendLine($"| Source Addresses | `{string.Join(", ", firewallConfig.SourceAddresses)}` |");
+            if (firewallConfig.SourceIpGroups.Count > 0 && firewallConfig.SourceAddresses.Count > 0)
+                sb.AppendLine($"| 優先使用 | Source IP Groups |");
+            sb.AppendLine();
+
+            sb.AppendLine("### Rule Collections");
+            sb.AppendLine();
+            sb.AppendLine("| Rule Collection | 類型 | Priority | TLS Inspection |");
+            sb.AppendLine("|----------------|------|----------|----------------|");
+            sb.AppendLine($"| `{firewallConfig.TlsRuleCollectionName}` | Application Rule | {firewallConfig.TlsRuleCollectionPriority} | ✅ 啟用 |");
+            sb.AppendLine($"| `{firewallConfig.FqdnRuleCollectionName}` | Application Rule | {firewallConfig.FqdnRuleCollectionPriority} | ❌ 停用 (SNI only) |");
+            sb.AppendLine();
+
+            sb.AppendLine("> **使用方式**: 依企業安全政策擇一啟用。TLS inspection 版本可進行深度封包檢測，FQDN-only 版本僅透過 SNI 過濾。");
+            sb.AppendLine();
+        }
 
         // Group FQDNs by top-level domain
         sb.AppendLine("## 需要的 FQDN");

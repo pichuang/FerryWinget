@@ -52,7 +52,25 @@ public sealed class FirewallPolicyDeployer
         }
 
         var fqdnArgs = string.Join(" ", fqdns.Select(f => $"\"{f}\""));
-        var sourceAddrArgs = string.Join(" ", _config.SourceAddresses.Select(a => $"\"{a}\""));
+
+        // Build source args: use IP Groups if configured, otherwise source addresses
+        string sourceArgs;
+        string sourceArgType;
+        if (_config.SourceIpGroups.Count > 0)
+        {
+            sourceArgs = string.Join(" ", _config.SourceIpGroups.Select(g => $"\"{g}\""));
+            sourceArgType = "--source-ip-groups";
+        }
+        else if (_config.SourceAddresses.Count > 0)
+        {
+            sourceArgs = string.Join(" ", _config.SourceAddresses.Select(a => $"\"{a}\""));
+            sourceArgType = "--source-addresses";
+        }
+        else
+        {
+            result.Message = "未設定 source_addresses 或 source_ip_groups — 無法建立 firewall rule。";
+            return result;
+        }
 
         // 1. Ensure rule collection group exists
         var rcgCmd = BuildRuleCollectionGroupCreateCommand();
@@ -64,7 +82,7 @@ public sealed class FirewallPolicyDeployer
             _config.TlsRuleCollectionPriority,
             "winget-tls-fqdns",
             fqdnArgs,
-            sourceAddrArgs,
+            sourceArgType, sourceArgs,
             enableTls: true);
         commands.Add(tlsCmd);
 
@@ -74,7 +92,7 @@ public sealed class FirewallPolicyDeployer
             _config.FqdnRuleCollectionPriority,
             "winget-fqdn-only",
             fqdnArgs,
-            sourceAddrArgs,
+            sourceArgType, sourceArgs,
             enableTls: false);
         commands.Add(fqdnOnlyCmd);
 
@@ -151,7 +169,7 @@ public sealed class FirewallPolicyDeployer
 
     private string BuildRuleCollectionCommand(
         string collectionName, int priority, string ruleName,
-        string fqdnArgs, string sourceAddrArgs, bool enableTls)
+        string fqdnArgs, string sourceArgType, string sourceArgs, bool enableTls)
     {
         var cmd = $"network firewall policy rule-collection-group collection add-filter-collection " +
                   $"--resource-group \"{_config.ResourceGroup}\" " +
@@ -163,7 +181,7 @@ public sealed class FirewallPolicyDeployer
                   $"--rule-name \"{ruleName}\" " +
                   $"--rule-type ApplicationRule " +
                   $"--protocols Https=443 " +
-                  $"--source-addresses {sourceAddrArgs} " +
+                  $"{sourceArgType} {sourceArgs} " +
                   $"--target-fqdns {fqdnArgs} " +
                   $"--enable-tls-inspection {enableTls.ToString().ToLowerInvariant()}";
         return cmd;

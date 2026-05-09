@@ -211,7 +211,7 @@ public class Program
             reportGen.GenerateDiffReport(newPkgs, updatedPkgs, removedPkgs);
             Console.WriteLine($"  已產生 diff-report.md");
 
-            reportGen.GenerateFirewallFqdnReport(analysis);
+            reportGen.GenerateFirewallFqdnReport(analysis, config.Firewall);
             Console.WriteLine($"  已產生 firewall-fqdns.md");
 
             // Step 7: Azure Firewall Policy deployment

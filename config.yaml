@@ -369,13 +369,22 @@ firewall:
   # 預設值: 501
   fqdn_rule_collection_priority: 501
 
+  # 來源設定 — source_addresses 和 source_ip_groups 擇一使用
+  # 若同時設定，優先使用 source_ip_groups
+
   # 允許通過防火牆的來源 IP 位址/CIDR 清單
   # 範例:
-  #   - "10.0.0.0/8"         # 整個 10.x.x.x 私有網段
-  #   - "172.16.0.0/12"      # 172.16-31.x.x 私有網段
-  #   - "192.168.1.0/24"     # 特定子網路
-  source_addresses:
-    - "10.0.0.0/8"
+  #   - "10.0.0.0/8"
+  #   - "192.168.1.0/24"
+  source_addresses: []
+
+  # 允許通過防火牆的來源 IP Group 名稱 (Azure IP Groups)
+  # 範例:
+  #   - "ipg-v-a"
+  #   - "ipg-v-b"
+  source_ip_groups:
+    - "ipg-v-a"
+    - "ipg-v-b"
 
 # -----------------------------------------------------------------------------
 # 時區設定 — 影響所有時間戳記的顯示格式
