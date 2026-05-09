@@ -30,8 +30,15 @@ public sealed class StorageConfig
 
 public sealed class FilteringConfig
 {
-    public List<string> Allowlist { get; set; } = [];
+    public AllowlistConfig Allowlist { get; set; } = new();
     public BlocklistConfig Blocklist { get; set; } = new();
+}
+
+public sealed class AllowlistConfig
+{
+    public bool Enabled { get; set; } = true;
+    public List<string> Publishers { get; set; } = [];
+    public List<string> Packages { get; set; } = [];
 }
 
 public sealed class BlocklistConfig

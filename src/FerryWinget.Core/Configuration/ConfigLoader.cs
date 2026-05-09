@@ -77,9 +77,9 @@ public static class ConfigLoader
             baseConfig.Storage.ReportsDir = overrideConfig.Storage.ReportsDir;
 
         // Filtering
-        if (overrideConfig.Filtering.Allowlist.Count > 0)
+        if (overrideConfig.Filtering.Allowlist.Packages.Count > 0 || overrideConfig.Filtering.Allowlist.Publishers.Count > 0)
             baseConfig.Filtering.Allowlist = overrideConfig.Filtering.Allowlist;
-        if (overrideConfig.Filtering.Blocklist.Packages.Count > 0)
+        if (overrideConfig.Filtering.Blocklist.Packages.Count > 0 || overrideConfig.Filtering.Blocklist.Publishers.Count > 0)
             baseConfig.Filtering.Blocklist = overrideConfig.Filtering.Blocklist;
 
         // Retention

@@ -39,7 +39,10 @@ public sealed class TestServerFixture : IDisposable
               reports_dir: "reports"
             filtering:
               allowlist:
-                - "GitHub.*"
+                enabled: true
+                publishers: []
+                packages:
+                  - "GitHub.*"
               blocklist:
                 enabled: true
                 publishers: []

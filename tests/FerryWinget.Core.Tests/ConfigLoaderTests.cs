@@ -20,7 +20,10 @@ public class ConfigLoaderTests
               reports_dir: "rpt"
             filtering:
               allowlist:
-                - "GitHub.*"
+                enabled: true
+                publishers: []
+                packages:
+                  - "GitHub.*"
               blocklist:
                 enabled: true
                 publishers: []
@@ -60,7 +63,7 @@ public class ConfigLoaderTests
         config.Source.GithubRepo.Should().Be("microsoft/winget-pkgs");
         config.Source.GithubToken.Should().Be("test-token");
         config.Storage.RootPath.Should().Be("./data");
-        config.Filtering.Allowlist.Should().BeEquivalentTo(["GitHub.*"]);
+        config.Filtering.Allowlist.Packages.Should().BeEquivalentTo(["GitHub.*"]);
         config.Filtering.Blocklist.Packages.Should().BeEquivalentTo(["Google.*"]);
         config.Filtering.Blocklist.Enabled.Should().BeTrue();
         config.Retention.MaxMajorVersions.Should().Be(3);

@@ -1,6 +1,7 @@
 namespace FerryWinget.Core.Tests;
 
 using FluentAssertions;
+using FerryWinget.Core.Configuration;
 using FerryWinget.Core.Filtering;
 
 public class PackageFilterTests
@@ -79,7 +80,9 @@ public class PackageFilterTests
     [Fact]
     public void BlocklistDisabled_AllowsEverything()
     {
-        var filter = new PackageFilter(["GitHub.*"], ["GitHub.*"], [], blocklistEnabled: false);
+        var filter = new PackageFilter(
+            new AllowlistConfig { Packages = ["GitHub.*"] },
+            new BlocklistConfig { Enabled = false, Packages = ["GitHub.*"] });
         filter.IsAllowed("GitHub.Desktop").Should().BeTrue();
         filter.IsBlocked("GitHub.Desktop").Should().BeFalse();
     }
@@ -87,7 +90,9 @@ public class PackageFilterTests
     [Fact]
     public void PublisherBlock_BlocksByPublisherPrefix()
     {
-        var filter = new PackageFilter(["*"], [], ["Google"], blocklistEnabled: true);
+        var filter = new PackageFilter(
+            new AllowlistConfig { Packages = ["*"] },
+            new BlocklistConfig { Enabled = true, Publishers = ["Google"] });
         filter.IsBlocked("Google.Chrome").Should().BeTrue();
         filter.IsBlocked("Google.Drive").Should().BeTrue();
         filter.IsAllowed("GitHub.Desktop").Should().BeTrue();
@@ -98,7 +103,7 @@ public class PackageFilterTests
     {
         var config = new FerryWinget.Core.Configuration.FilteringConfig
         {
-            Allowlist = ["GitHub.*"],
+            Allowlist = new() { Packages = ["GitHub.*"] },
             Blocklist = new()
             {
                 Enabled = true,
@@ -111,6 +116,17 @@ public class PackageFilterTests
         filter.IsAllowed("GitHub.Desktop").Should().BeTrue();
         filter.IsBlocked("Google.Chrome").Should().BeTrue();
         filter.IsBlocked("Microsoft.VisualStudio.2022.Community").Should().BeTrue();
-        filter.IsAllowed("Microsoft.VisualStudio.2022.Enterprise").Should().BeFalse(); // not in allowlist
+        filter.IsAllowed("Microsoft.VisualStudio.2022.Enterprise").Should().BeFalse();
+    }
+
+    [Fact]
+    public void AllowlistPublishers_AllowsByPublisherPrefix()
+    {
+        var filter = new PackageFilter(
+            new AllowlistConfig { Publishers = ["Microsoft"], Packages = ["GitHub.*"] },
+            new BlocklistConfig());
+        filter.IsAllowed("Microsoft.VisualStudioCode").Should().BeTrue();
+        filter.IsAllowed("GitHub.Desktop").Should().BeTrue();
+        filter.IsAllowed("Google.Chrome").Should().BeFalse();
     }
 }

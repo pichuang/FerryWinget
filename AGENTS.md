@@ -108,6 +108,10 @@ mirror-data/
 2. `AGENTS.md`（本檔案）
 3. `docs/developer-guide.md`（若影響開發流程）
 4. `docs/operations-guide.md`（若影響維運流程）
+5. `nuget-packages/` — **每次新增或更新 NuGet 套件後必須執行**：
+   ```bash
+   dotnet restore --packages ./nuget-packages
+   ```
 
 ## 時區
 

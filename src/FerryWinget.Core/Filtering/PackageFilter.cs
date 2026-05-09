@@ -14,26 +14,28 @@ using FerryWinget.Core.Models;
 public sealed class PackageFilter
 {
     private readonly List<Regex> _allowPatterns;
+    private readonly List<(string Pattern, Regex Regex)> _allowPublisherPatterns;
+    private readonly bool _allowlistEnabled;
     private readonly List<(string Pattern, Regex Regex)> _blockPatterns;
     private readonly List<(string Pattern, Regex Regex)> _blockPublisherPatterns;
     private readonly bool _blocklistEnabled;
 
     public PackageFilter(IEnumerable<string> allowlist, IEnumerable<string> blocklist)
-        : this(allowlist, blocklist, [], blocklistEnabled: true) { }
+        : this(
+            new AllowlistConfig { Enabled = true, Packages = allowlist.ToList() },
+            new BlocklistConfig { Enabled = true, Packages = blocklist.ToList() }) { }
 
     public PackageFilter(FilteringConfig config)
-        : this(config.Allowlist, config.Blocklist.Packages, config.Blocklist.Publishers, config.Blocklist.Enabled) { }
+        : this(config.Allowlist, config.Blocklist) { }
 
-    public PackageFilter(
-        IEnumerable<string> allowlist,
-        IEnumerable<string> blocklistPackages,
-        IEnumerable<string> blocklistPublishers,
-        bool blocklistEnabled = true)
+    public PackageFilter(AllowlistConfig allowlist, BlocklistConfig blocklist)
     {
-        _blocklistEnabled = blocklistEnabled;
-        _allowPatterns = allowlist.Select(GlobToRegex).ToList();
-        _blockPatterns = blocklistPackages.Select(p => (p, GlobToRegex(p))).ToList();
-        _blockPublisherPatterns = blocklistPublishers.Select(p => (p, GlobToRegex(p))).ToList();
+        _allowlistEnabled = allowlist.Enabled;
+        _allowPatterns = allowlist.Packages.Select(GlobToRegex).ToList();
+        _allowPublisherPatterns = allowlist.Publishers.Select(p => (p, GlobToRegex(p))).ToList();
+        _blocklistEnabled = blocklist.Enabled;
+        _blockPatterns = blocklist.Packages.Select(p => (p, GlobToRegex(p))).ToList();
+        _blockPublisherPatterns = blocklist.Publishers.Select(p => (p, GlobToRegex(p))).ToList();
     }
 
     public FilterResult Filter(IEnumerable<string> packageIdentifiers)
@@ -53,7 +55,7 @@ public sealed class PackageFilter
                 continue;
             }
 
-            if (_allowPatterns.Count == 0 || _allowPatterns.Any(a => a.IsMatch(id)))
+            if (MatchesAllowlist(id))
             {
                 result.PlannedPackages.Add(id);
             }
@@ -71,17 +73,36 @@ public sealed class PackageFilter
         if (IsBlocked(packageIdentifier))
             return false;
 
-        return _allowPatterns.Count == 0 || _allowPatterns.Any(a => a.IsMatch(packageIdentifier));
+        return MatchesAllowlist(packageIdentifier);
     }
 
     public bool IsBlocked(string packageIdentifier) =>
         FindBlockMatch(packageIdentifier) is not null;
 
-    /// <summary>
-    /// Check if a publisher name matches blocklist publisher patterns.
-    /// </summary>
     public bool IsPublisherBlocked(string publisher) =>
         _blocklistEnabled && _blockPublisherPatterns.Any(b => b.Regex.IsMatch(publisher));
+
+    private bool MatchesAllowlist(string packageIdentifier)
+    {
+        // If allowlist is disabled or empty (no packages + no publishers), allow everything
+        if (!_allowlistEnabled || (_allowPatterns.Count == 0 && _allowPublisherPatterns.Count == 0))
+            return true;
+
+        // Check package patterns (OR)
+        if (_allowPatterns.Any(a => a.IsMatch(packageIdentifier)))
+            return true;
+
+        // Check publisher patterns against the publisher prefix (OR)
+        var dotIndex = packageIdentifier.IndexOf('.');
+        if (dotIndex > 0 && _allowPublisherPatterns.Count > 0)
+        {
+            var publisher = packageIdentifier[..dotIndex];
+            if (_allowPublisherPatterns.Any(a => a.Regex.IsMatch(publisher)))
+                return true;
+        }
+
+        return false;
+    }
 
     private string? FindBlockMatch(string packageIdentifier)
     {

@@ -50,15 +50,23 @@ storage:
 # 規則: blocklist 優先權最高，即使套件符合 allowlist 也會被排除
 # -----------------------------------------------------------------------------
 filtering:
-  # 允許清單 — 只下載符合這些 pattern 的套件
-  # 留空 [] 表示允許所有套件 (僅受 blocklist 限制)
-  # 範例:
-  #   - "Microsoft.*"        # 所有 Microsoft 開頭的套件
-  #   - "Git.Git"            # 精確匹配單一套件
-  #   - "Python.Python.*"    # Python 相關套件
-  #   - "7zip.*"             # 7-Zip 相關套件
+  # 允許清單 — 只同步符合條件的套件
+  # publishers 和 packages 為聯集關係 (OR)：符合任一條件即允許同步
   allowlist:
-    - "GitHub.*"
+    # 是否啟用允許清單功能（啟用後僅同步清單內的套件）
+    enabled: true
+
+    # 依發行者名稱過濾（匹配 PackageIdentifier 的 Publisher 前綴）
+    publishers:
+      - "Microsoft"
+      - "GitHub"
+
+    # 依套件識別碼過濾（支援萬用字元）
+    packages:
+      - "Microsoft.*"
+      - "GitHub.*"
+      - "WiresharkFoundation.*"
+      - "Telerik.Fiddler.Classic"
 
   # 封鎖清單 — 永遠排除符合這些 pattern 的套件 (優先權高於 allowlist)
   blocklist:

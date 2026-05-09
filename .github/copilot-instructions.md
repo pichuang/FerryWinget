@@ -82,7 +82,8 @@ config.yaml                   → 共用設定檔
 - **架構排除**: Downloader 預設排除 `arm64` 架構的 installer，可透過 `downloader.excluded_architectures` 設定
 - **本地快取**: GitHub 套件列舉結果快取於 `{storage.root_path}/.cache/package-list-cache.json`，TTL 預設 30 分鐘
 - **Tests 使用 `./tmp_download`**: 測試暫存目錄，每次 setup/teardown 清除，已在 `.gitignore`
-- **⚠️ Self-Maintenance Rule**: 當對本專案進行結構性變更時（新增/刪除/重新命名檔案、變更架構、新增功能、修改設定參數），必須同步更新本檔案
+- **離線套件庫**: `nuget-packages/` 存放所有 NuGet 相依套件，供內網離線建置。**每次新增/更新 NuGet 套件後必須執行 `dotnet restore --packages ./nuget-packages` 更新此目錄**
+- **⚠️ Self-Maintenance Rule**: 當對本專案進行結構性變更時（新增/刪除/重新命名檔案、變更架構、新增功能、修改設定參數），必須同步更新本檔案。**新增或更新 NuGet 套件時，必須同步更新 `nuget-packages/` 離線套件庫**
 
 ## Documentation
 
