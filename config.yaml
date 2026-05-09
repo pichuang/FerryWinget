@@ -283,9 +283,10 @@ downloader:
   max_concurrency: 16
 
   # 單一檔案的下載逾時時間 (秒)
+  # 依檔案大小自動調整: 大檔案 (>100MB) 需要更長時間
   # 可用範圍: 正整數 (建議 60-600)
-  # 預設值: 300
-  download_timeout_seconds: 300
+  # 預設值: 600
+  download_timeout_seconds: 600
 
   # 下載失敗時的重試次數
   # 可用範圍: 正整數 (建議 1-5)
@@ -294,7 +295,7 @@ downloader:
 
   # HTTP 請求的 User-Agent 標頭
   # 預設值: "FerryWinget/1.0"
-  user_agent: "FerryWinget/1.0"
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0"
 
   # 套件列舉結果的本地快取有效期 (分鐘)
   # 快取檔案儲存於 {storage.root_path}/.cache/package-list-cache.json

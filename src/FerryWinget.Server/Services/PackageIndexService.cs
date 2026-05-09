@@ -16,6 +16,7 @@ using YamlDotNet.Serialization.NamingConventions;
 public sealed class PackageIndexService
 {
     private readonly IPackageStore _store;
+    private readonly ILogger<PackageIndexService> _logger;
     private readonly ConcurrentDictionary<string, IndexedPackage> _index = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly IDeserializer YamlDeserializer = new DeserializerBuilder()
@@ -23,25 +24,27 @@ public sealed class PackageIndexService
         .IgnoreUnmatchedProperties()
         .Build();
 
-    public PackageIndexService(IPackageStore store)
+    public PackageIndexService(IPackageStore store, ILogger<PackageIndexService> logger)
     {
         _store = store;
+        _logger = logger;
     }
 
     public IReadOnlyDictionary<string, IndexedPackage> Index => _index;
 
-    public async Task RebuildIndexAsync()
+    public async Task RebuildIndexAsync(CancellationToken ct = default)
     {
         _index.Clear();
 
         foreach (var packageId in _store.ListPackageIds())
         {
+            ct.ThrowIfCancellationRequested();
             var versions = _store.ListVersions(packageId).ToList();
             var indexedVersions = new List<IndexedVersion>();
 
             foreach (var version in versions)
             {
-                var yaml = await _store.LoadManifestAsync(packageId, version);
+                var yaml = await _store.LoadManifestAsync(packageId, version, ct);
                 if (yaml is null) continue;
 
                 try
@@ -61,9 +64,10 @@ public sealed class PackageIndexService
                         }).ToList() ?? []
                     });
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip malformed manifests
+                    _logger.LogWarning("Skipping malformed manifest: {PackageId} {Version} — {Error}",
+                        packageId, version, ex.Message);
                 }
             }
 

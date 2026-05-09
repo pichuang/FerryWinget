@@ -14,7 +14,7 @@ using FerryWinget.Core.Storage;
 /// <summary>
 /// Downloads installer binaries with SemaphoreSlim concurrency control and SHA256 verification.
 /// </summary>
-public sealed class InstallerDownloader
+public sealed class InstallerDownloader : IDisposable
 {
     private readonly HttpClient _http;
     private readonly IPackageStore _store;
@@ -55,7 +55,13 @@ public sealed class InstallerDownloader
                     using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     cts.CancelAfter(_timeout);
 
-                    var data = await _http.GetByteArrayAsync(request.InstallerUrl, cts.Token);
+                    using var response = await _http.GetAsync(request.InstallerUrl, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                    response.EnsureSuccessStatusCode();
+
+                    using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
+                    using var memStream = new MemoryStream();
+                    await stream.CopyToAsync(memStream, cts.Token);
+                    var data = memStream.ToArray();
 
                     // Verify SHA256
                     if (!string.IsNullOrEmpty(request.ExpectedSha256))
@@ -151,6 +157,8 @@ public sealed class InstallerDownloader
         await Task.WhenAll(tasks);
         return results.ToList();
     }
+
+    public void Dispose() => _semaphore.Dispose();
 }
 
 public sealed class DownloadRequest

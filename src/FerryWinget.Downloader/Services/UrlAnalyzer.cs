@@ -10,21 +10,22 @@ using System.Threading.Tasks;
 /// <summary>
 /// Analyzes installer URLs to extract unique FQDNs, including following HTTP redirects.
 /// </summary>
-public sealed class UrlAnalyzer
+public sealed class UrlAnalyzer : IDisposable
 {
     private readonly HttpClient _http;
+    private readonly bool _ownsClient;
 
-    public UrlAnalyzer(HttpClient? http = null)
+    public UrlAnalyzer(HttpClient http)
     {
-        if (http is not null)
-        {
-            _http = http;
-        }
-        else
-        {
-            var handler = new HttpClientHandler { AllowAutoRedirect = false };
-            _http = new HttpClient(handler);
-        }
+        _http = http;
+        _ownsClient = false;
+    }
+
+    public UrlAnalyzer()
+    {
+        var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        _http = new HttpClient(handler);
+        _ownsClient = true;
     }
 
     /// <summary>
@@ -147,6 +148,11 @@ public sealed class UrlAnalyzer
             return true;
         }
         return false;
+    }
+
+    public void Dispose()
+    {
+        if (_ownsClient) _http.Dispose();
     }
 }
 

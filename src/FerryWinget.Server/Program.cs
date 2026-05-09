@@ -1,6 +1,7 @@
 using FerryWinget.Core.Configuration;
 using FerryWinget.Core.Storage;
 using FerryWinget.Server.Services;
+using Microsoft.AspNetCore.ResponseCompression;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -42,6 +43,18 @@ builder.Services.AddControllers()
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Response compression
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.EnableForHttps = true;
+    opts.Providers.Add<BrotliCompressionProvider>();
+    opts.Providers.Add<GzipCompressionProvider>();
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json"]);
+});
+
+// Response caching
+builder.Services.AddResponseCaching();
+
 // OpenTelemetry
 var otelResource = ResourceBuilder.CreateDefault()
     .AddService("FerryWinget.Server", serviceVersion: "1.0.0");
@@ -71,8 +84,13 @@ var app = builder.Build();
 
 // Initialize package index
 var indexService = app.Services.GetRequiredService<PackageIndexService>();
+var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+logger.LogInformation("Building package index...");
 await indexService.RebuildIndexAsync();
+logger.LogInformation("Package index built: {Count} packages", indexService.Index.Count);
 
+app.UseResponseCompression();
+app.UseResponseCaching();
 app.UseStaticFiles();
 app.MapControllers();
 

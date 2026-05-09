@@ -50,7 +50,7 @@ public class Program
         var store = new FileSystemPackageStore(config.Storage.RootPath, config.Storage.PackagesDir);
         var filter = new PackageFilter(config.Filtering);
         var retention = new VersionRetentionService(config.Retention);
-        var downloader = new InstallerDownloader(http, store, config.Downloader);
+        using var downloader = new InstallerDownloader(http, store, config.Downloader);
         var reportsDir = Path.Combine(config.Storage.RootPath, config.Storage.ReportsDir);
         var reportGen = new ReportGenerator(reportsDir);
 
@@ -196,7 +196,7 @@ public class Program
 
             // Step 5: URL analysis
             Console.WriteLine("步驟 5: 分析 installer URL FQDN...");
-            var urlAnalyzer = new UrlAnalyzer();
+            using var urlAnalyzer = new UrlAnalyzer();
             var analysis = await urlAnalyzer.AnalyzeAsync(allInstallerUrls, followRedirects: true);
             Console.WriteLine($"  發現 {analysis.Fqdns.Count} 個不重複 FQDN");
 

@@ -56,7 +56,7 @@ public sealed class DownloaderConfig
     public int MaxConcurrency { get; set; } = 16;
     public int DownloadTimeoutSeconds { get; set; } = 300;
     public int RetryCount { get; set; } = 3;
-    public string UserAgent { get; set; } = "FerryWinget/1.0";
+    public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0";
     public int CacheTtlMinutes { get; set; } = 30;
     public List<string> ExcludedArchitectures { get; set; } = ["arm64"];
 }

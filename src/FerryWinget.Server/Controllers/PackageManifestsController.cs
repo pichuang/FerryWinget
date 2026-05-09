@@ -15,15 +15,18 @@ public sealed class PackageManifestsController : ControllerBase
     private readonly PackageIndexService _indexService;
     private readonly IPackageStore _store;
     private readonly ServerConfig _serverConfig;
+    private readonly ILogger<PackageManifestsController> _logger;
 
     public PackageManifestsController(
         PackageIndexService indexService,
         IPackageStore store,
-        ServerConfig serverConfig)
+        ServerConfig serverConfig,
+        ILogger<PackageManifestsController> logger)
     {
         _indexService = indexService;
         _store = store;
         _serverConfig = serverConfig;
+        _logger = logger;
     }
 
     [HttpGet("packageManifests/{packageIdentifier}")]
@@ -33,7 +36,10 @@ public sealed class PackageManifestsController : ControllerBase
     {
         var pkg = _indexService.GetPackage(packageIdentifier);
         if (pkg is null)
+        {
+            _logger.LogWarning("Package not found: {PackageId}", packageIdentifier);
             return NotFound();
+        }
 
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
@@ -72,16 +78,17 @@ public sealed class PackageManifestsController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>
-    /// Serves the actual installer binary file.
-    /// </summary>
     [HttpGet("installers/{packageIdentifier}/{version}/{architecture}/{fileName}")]
     public async Task<IActionResult> GetInstaller(
         string packageIdentifier, string version, string architecture, string fileName)
     {
         var data = await _store.LoadInstallerAsync(packageIdentifier, version, architecture, fileName);
         if (data is null)
+        {
+            _logger.LogWarning("Installer not found: {PackageId} {Version} {Arch} {File}",
+                packageIdentifier, version, architecture, fileName);
             return NotFound();
+        }
 
         var contentType = fileName.EndsWith(".msi", System.StringComparison.OrdinalIgnoreCase)
             ? "application/x-msi"
