@@ -151,6 +151,49 @@ A: 預設支援 `1.4.0`、`1.7.0`、`1.9.0`，涵蓋 Windows 11 和 Server 2022/
 
 ## Windows Client 設定
 
+### Q: 如何驗證各 Windows 版本的 winget 相容性？
+
+A: FerryWinget 支援所有具備 winget ≥ 1.4（REST source 支援）的 Windows 版本。
+
+**各平台安裝 winget 方式：**
+
+| OS | winget 來源 | 備註 |
+|----|------------|------|
+| Windows 11 | 內建 | 直接可用 |
+| Windows Server 2025 | 內建 | 直接可用 |
+| Windows 10 (1809+) | Microsoft Store / GitHub Release | 需安裝 App Installer ≥ 1.4 |
+| Windows Server 2022 | 手動安裝 | 需安裝 VCLibs + UI.Xaml + App Installer |
+
+**Windows Server 2022 手動安裝 winget：**
+```powershell
+# 安裝相依項
+Add-AppxPackage -Path "Microsoft.VCLibs.x64.14.00.Desktop.appx"
+Add-AppxPackage -Path "Microsoft.UI.Xaml.2.8.x64.appx"
+
+# 安裝 App Installer (含 winget)
+Add-AppxPackage -Path "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+```
+從 [GitHub Releases](https://github.com/microsoft/winget-cli/releases) 下載。
+
+**驗證步驟（適用所有平台）：**
+```powershell
+# 1. 確認 winget 版本 (需 ≥ v1.4)
+winget --version
+
+# 2. 新增 FerryWinget 為自訂來源
+winget source add -n FerryWinget -a http://<SERVER_IP>:8080/api -t "Microsoft.Rest"
+
+# 3. 驗證來源連線
+winget source list
+winget source update -n FerryWinget
+
+# 4. 搜尋測試
+winget search --source FerryWinget --query "GitHub"
+
+# 5. 安裝測試
+winget install --source FerryWinget GitHub.cli
+```
+
 ### Q: 如何新增 FerryWinget 為 winget source？
 
 A: 以系統管理員開啟 PowerShell：
@@ -248,10 +291,17 @@ A: 編輯 `config.yaml`：
 ```yaml
 filtering:
   allowlist:
-    - "GitHub.*"
-    - "Microsoft.VisualStudioCode"
-    - "7zip.7zip"
+    enabled: true
+    publishers:
+      - "Microsoft"
+      - "GitHub, Inc."
+    packages:
+      - "GitHub.*"
+      - "Microsoft.VisualStudioCode"
+      - "7zip.7zip"
 ```
+
+`publishers` 和 `packages` 為 OR 聯集關係：符合任一條件即允許同步。
 
 ### Q: Blocklist 支援哪些封鎖方式？
 

@@ -43,6 +43,12 @@ builder.Services.AddControllers()
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Limit request body size to 1MB (manifestSearch POST body should be small)
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 1 * 1024 * 1024; // 1 MB
+});
+
 // Response compression
 builder.Services.AddResponseCompression(opts =>
 {
@@ -88,6 +94,17 @@ var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Sta
 logger.LogInformation("Building package index...");
 await indexService.RebuildIndexAsync();
 logger.LogInformation("Package index built: {Count} packages", indexService.Index.Count);
+
+// Security headers middleware
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'";
+    await next();
+});
 
 app.UseResponseCompression();
 app.UseResponseCaching();

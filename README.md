@@ -34,7 +34,7 @@
 
 ```bash
 dotnet build
-dotnet test       # 62 tests across 3 projects
+dotnet test       # 63 tests across 3 projects
 ```
 
 ### 執行 Downloader
@@ -82,7 +82,12 @@ source:
 
 filtering:
   allowlist:
-    - "GitHub.*"                          # Glob pattern
+    enabled: true
+    publishers:                           # 依發行者允許 (OR 聯集)
+      - "Microsoft"
+      - "GitHub, Inc."
+    packages:                             # 依套件識別碼允許，支援 Glob pattern
+      - "GitHub.*"
   blocklist:
     enabled: true
     publishers: []                        # 依發行者封鎖
@@ -127,7 +132,7 @@ src/
   FerryWinget.Downloader/       → 外網下載器 CLI
   FerryWinget.Server/           → 內網 winget REST source server
 tests/
-  FerryWinget.Core.Tests/       → 25 tests
+  FerryWinget.Core.Tests/       → 26 tests
   FerryWinget.Downloader.Tests/ → 27 tests
   FerryWinget.Server.Tests/     → 10 tests
 config.yaml                     → 共用設定檔

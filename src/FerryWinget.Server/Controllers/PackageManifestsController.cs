@@ -82,20 +82,49 @@ public sealed class PackageManifestsController : ControllerBase
     public async Task<IActionResult> GetInstaller(
         string packageIdentifier, string version, string architecture, string fileName)
     {
-        var data = await _store.LoadInstallerAsync(packageIdentifier, version, architecture, fileName);
-        if (data is null)
+        // Input validation — reject path traversal attempts
+        if (ContainsPathTraversal(packageIdentifier) || ContainsPathTraversal(version) ||
+            ContainsPathTraversal(architecture) || ContainsPathTraversal(fileName))
         {
-            _logger.LogWarning("Installer not found: {PackageId} {Version} {Arch} {File}",
+            _logger.LogWarning("Rejected path traversal attempt: {PackageId}/{Version}/{Arch}/{File}",
                 packageIdentifier, version, architecture, fileName);
-            return NotFound();
+            return BadRequest("Invalid path parameters.");
         }
 
-        var contentType = fileName.EndsWith(".msi", System.StringComparison.OrdinalIgnoreCase)
-            ? "application/x-msi"
-            : "application/octet-stream";
+        try
+        {
+            var data = await _store.LoadInstallerAsync(packageIdentifier, version, architecture, fileName);
+            if (data is null)
+            {
+                _logger.LogWarning("Installer not found: {PackageId} {Version} {Arch} {File}",
+                    packageIdentifier, version, architecture, fileName);
+                return NotFound();
+            }
 
-        return File(data, contentType, fileName);
+            var contentType = fileName.EndsWith(".msi", System.StringComparison.OrdinalIgnoreCase)
+                ? "application/x-msi"
+                : "application/octet-stream";
+
+            return File(data, contentType, fileName);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid request parameters for installer");
+            return BadRequest("Invalid request parameters.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Blocked unauthorized file access attempt");
+            return BadRequest("Invalid request parameters.");
+        }
     }
+
+    private static bool ContainsPathTraversal(string value) =>
+        string.IsNullOrWhiteSpace(value) ||
+        value.Contains("..") ||
+        value.Contains('/') ||
+        value.Contains('\\') ||
+        value.Contains('\0');
 
     private static string RewriteInstallerUrl(
         string baseUrl, string packageId, string version, IndexedInstaller installer)

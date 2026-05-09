@@ -71,9 +71,38 @@ public sealed class InstallerDownloader : IDisposable
                     using var response = await _http.GetAsync(request.InstallerUrl, HttpCompletionOption.ResponseHeadersRead, cts.Token);
                     response.EnsureSuccessStatusCode();
 
+                    // Enforce max file size (2GB) to prevent DoS
+                    const long maxFileSize = 2L * 1024 * 1024 * 1024;
+                    var contentLength = response.Content.Headers.ContentLength;
+                    if (contentLength > maxFileSize)
+                    {
+                        return new DownloadResult
+                        {
+                            Request = request,
+                            Success = false,
+                            Error = $"檔案大小超過限制: {contentLength / (1024 * 1024)}MB > {maxFileSize / (1024 * 1024)}MB"
+                        };
+                    }
+
                     using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
                     using var memStream = new MemoryStream();
-                    await stream.CopyToAsync(memStream, cts.Token);
+                    var buffer = new byte[81920];
+                    long totalRead = 0;
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer, cts.Token)) > 0)
+                    {
+                        totalRead += bytesRead;
+                        if (totalRead > maxFileSize)
+                        {
+                            return new DownloadResult
+                            {
+                                Request = request,
+                                Success = false,
+                                Error = $"檔案大小超過限制 ({maxFileSize / (1024 * 1024)}MB)"
+                            };
+                        }
+                        await memStream.WriteAsync(buffer.AsMemory(0, bytesRead), cts.Token);
+                    }
                     var data = memStream.ToArray();
 
                     // Verify SHA256

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FerryWinget.Core.Configuration;
@@ -14,17 +15,30 @@ using FerryWinget.Core.Configuration;
 /// Deploys Azure Firewall Policy rules using az CLI.
 /// Supports --dry-run mode to output commands without executing.
 /// </summary>
-public sealed class FirewallPolicyDeployer
+public sealed partial class FirewallPolicyDeployer
 {
     private readonly FirewallConfig _config;
     private readonly bool _dryRun;
     private readonly Func<string, string, Task<(int ExitCode, string Output, string Error)>> _executeCommand;
+
+    // FQDN: RFC 952/1123 — letters, digits, hyphens, dots, wildcards
+    [GeneratedRegex(@"^[\*]?[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$")]
+    private static partial Regex SafeFqdnRegex();
+
+    // Azure resource names: alphanumeric, hyphens, underscores
+    [GeneratedRegex(@"^[a-zA-Z0-9\-_]+$")]
+    private static partial Regex SafeAzureResourceNameRegex();
+
+    // IP CIDR: basic validation for IPv4 addresses/ranges
+    [GeneratedRegex(@"^[0-9\./]+$")]
+    private static partial Regex SafeIpCidrRegex();
 
     public FirewallPolicyDeployer(FirewallConfig config, bool dryRun = false)
     {
         _config = config;
         _dryRun = dryRun;
         _executeCommand = ExecuteAzCommandAsync;
+        ValidateConfig(config);
     }
 
     /// <summary>
@@ -48,6 +62,14 @@ public sealed class FirewallPolicyDeployer
         if (fqdns.Count == 0)
         {
             result.Message = "No FQDNs to deploy — skipping firewall policy update.";
+            return result;
+        }
+
+        // Validate all FQDNs before proceeding
+        var invalidFqdns = fqdns.Where(f => !SafeFqdnRegex().IsMatch(f)).ToList();
+        if (invalidFqdns.Count > 0)
+        {
+            result.Message = $"Invalid FQDNs detected (rejected): {string.Join(", ", invalidFqdns.Take(5))}";
             return result;
         }
 
@@ -206,6 +228,36 @@ public sealed class FirewallPolicyDeployer
         await process.WaitForExitAsync();
 
         return (process.ExitCode, output, error);
+    }
+
+    /// <summary>
+    /// Validates firewall config values to prevent command injection via config.yaml.
+    /// </summary>
+    private static void ValidateConfig(FirewallConfig config)
+    {
+        ValidateAzureResourceName(config.ResourceGroup, "resource_group");
+        ValidateAzureResourceName(config.PolicyName, "policy_name");
+        ValidateAzureResourceName(config.RuleCollectionGroupName, "rule_collection_group_name");
+        ValidateAzureResourceName(config.TlsRuleCollectionName, "tls_rule_collection_name");
+        ValidateAzureResourceName(config.FqdnRuleCollectionName, "fqdn_rule_collection_name");
+
+        foreach (var addr in config.SourceAddresses)
+        {
+            if (!SafeIpCidrRegex().IsMatch(addr))
+                throw new ArgumentException($"Invalid source_addresses value: '{addr}'");
+        }
+
+        foreach (var group in config.SourceIpGroups)
+        {
+            if (!SafeAzureResourceNameRegex().IsMatch(group))
+                throw new ArgumentException($"Invalid source_ip_groups value: '{group}'");
+        }
+    }
+
+    private static void ValidateAzureResourceName(string value, string paramName)
+    {
+        if (!string.IsNullOrEmpty(value) && !SafeAzureResourceNameRegex().IsMatch(value))
+            throw new ArgumentException($"Invalid {paramName}: '{value}'. Only alphanumeric, hyphens, and underscores are allowed.");
     }
 }
 

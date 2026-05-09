@@ -14,7 +14,7 @@
 
 ```bash
 dotnet build                    # 建置全部
-dotnet test                     # 執行全部 62 個測試
+dotnet test                     # 執行全部 63 個測試
 dotnet test --filter "FullyQualifiedName~PackageFilterTests.Blocklist_HasHighestPriority"  # 單一測試
 ```
 
@@ -32,6 +32,7 @@ dotnet test --filter "FullyQualifiedName~PackageFilterTests.Blocklist_HasHighest
 ### 篩選邏輯 (`PackageFilter`)
 
 - **Blocklist 永遠優先於 Allowlist** — 即使套件同時匹配兩者，仍會被封鎖
+- Allowlist 是結構化物件 (`AllowlistConfig`)，含 `enabled`、`publishers`（依發行者名稱允許）、`packages`（依套件識別碼允許），publishers 和 packages 為 OR 聯集關係
 - Blocklist 是結構化物件 (`BlocklistConfig`)，含 `enabled`、`publishers`（依發行者名稱封鎖）、`packages`（依套件識別碼封鎖）
 - Allowlist 和 Blocklist 都使用 glob pattern（`*` 任意字元, `?` 單字元, 大小寫不敏感）
 

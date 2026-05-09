@@ -45,8 +45,7 @@ FerryWinget 是企業內部 Windows Package Manager (winget) 鏡像系統，由�
                    ┌─────────────────┐
                    │  mirror-data/   │
                    │  ├── packages/  │  (離線搬運)
-                   │  ├── installers/│  ──────────┐
-                   │  └── reports/   │            │
+                   │  └── reports/   │  ──────────┐
                    └─────────────────┘            │
                                                   ▼
                    ┌─────────────────┐   ┌─────────────────┐
@@ -63,32 +62,24 @@ FerryWinget 是企業內部 Windows Package Manager (winget) 鏡像系統，由�
 
 ```text
 mirror-data/                              # 由 config.yaml storage.root_path 設定
-├── packages/                             # manifest YAML 檔案
+├── packages/                             # manifest YAML + installer 二進位 (扁平結構)
 │   ├── GitHub.Desktop/
 │   │   ├── 3.4.0/
-│   │   │   └── GitHub.Desktop.yaml       # installer manifest
+│   │   │   ├── GitHub.Desktop.yaml       # installer manifest
+│   │   │   └── GitHubDesktopSetup-x64.exe # installer binary
 │   │   └── 3.5.0/
-│   │       └── GitHub.Desktop.yaml
+│   │       ├── GitHub.Desktop.yaml
+│   │       └── GitHubDesktopSetup-x64.exe
 │   └── GitHub.CLI/
 │       └── 2.40.0/
-│           └── GitHub.CLI.yaml
-├── installers/                           # installer 二進位檔案
-│   ├── GitHub.Desktop/
-│   │   ├── 3.4.0/
-│   │   │   └── x64/
-│   │   │       └── GitHubDesktopSetup-x64.exe
-│   │   └── 3.5.0/
-│   │       └── x64/
-│   │           └── GitHubDesktopSetup-x64.exe
-│   └── GitHub.CLI/
-│       └── 2.40.0/
-│           └── x64/
-│               └── gh_2.40.0_windows_amd64.msi
-└── reports/                              # Markdown 報告
-    ├── full-package-list.md              # 完整套件清單
-    ├── diff-report.md                    # 差異清單
-    ├── firewall-fqdns.md                 # FQDN 清單
-    └── firewall-commands.sh              # Firewall 部署腳本 (dry-run 產生)
+│           ├── GitHub.CLI.yaml
+│           └── gh_2.40.0_windows_amd64.msi
+├── reports/                              # Markdown 報告
+│   ├── full-package-list.md              # 完整套件清單
+│   ├── diff-report.md                    # 差異清單
+│   ├── firewall-fqdns.md                 # FQDN 清單
+│   └── firewall-commands.sh              # Firewall 部署腳本 (dry-run 產生)
+└── .cache/package-list-cache.json        # 套件列舉快取 (TTL 30min)
 ```
 
 ### 設定檔要點
@@ -98,13 +89,22 @@ mirror-data/                              # 由 config.yaml storage.root_path �
 ```yaml
 # 套件篩選 — 控制要鏡像哪些套件
 filtering:
-  allowlist:                    # Glob 模式，空列表 = 全部允許
-    - "GitHub.*"                # 允許所有 GitHub 開頭的套件
-    - "Microsoft.VisualStudioCode"
-    - "7zip.7zip"
-  blocklist:                    # Glob 模式，優先權最高
-    - "Google.*"                # 封鎖所有 Google 套件
-    - "*.Beta"                  # 封鎖 Beta 版套件
+  allowlist:                    # 結構化允許清單 (publishers + packages OR 聯集)
+    enabled: true
+    publishers:
+      - "Microsoft"
+      - "GitHub, Inc."
+    packages:
+      - "GitHub.*"              # 允許所有 GitHub 開頭的套件
+      - "Microsoft.VisualStudioCode"
+      - "7zip.7zip"
+  blocklist:                    # 結構化封鎖清單，優先權最高
+    enabled: true
+    publishers:
+      - "Google"
+    packages:
+      - "Google.*"              # 封鎖所有 Google 套件
+      - "*.Beta"                # 封鎖 Beta 版套件
 
 # 版本保留策略
 retention:
@@ -255,10 +255,15 @@ podman restart ferry-winget
 ```yaml
 filtering:
   allowlist:
-    - "GitHub.*"                          # 既有
-    - "Microsoft.VisualStudioCode"        # 新增：VS Code
-    - "7zip.7zip"                         # 新增：7-Zip
-    - "Notepad++.Notepad++"               # 新增：Notepad++
+    enabled: true
+    publishers:
+      - "Microsoft"
+      - "GitHub, Inc."
+    packages:
+      - "GitHub.*"                          # 既有
+      - "Microsoft.VisualStudioCode"        # 新增：VS Code
+      - "7zip.7zip"                         # 新增：7-Zip
+      - "Notepad++.Notepad++"               # 新增：Notepad++
 ```
 
 然後重新執行 Downloader。
@@ -289,11 +294,9 @@ retention:
 ```bash
 # 移除套件的所有版本
 rm -rf mirror-data/packages/SomePackage.Name/
-rm -rf mirror-data/installers/SomePackage.Name/
 
 # 移除特定版本
 rm -rf mirror-data/packages/SomePackage.Name/1.0.0/
-rm -rf mirror-data/installers/SomePackage.Name/1.0.0/
 
 # 重啟 Server 重新載入索引
 podman restart ferry-winget
@@ -308,8 +311,8 @@ ls mirror-data/packages/
 # 列出特定套件的版本
 ls mirror-data/packages/GitHub.Desktop/
 
-# 檢查特定 installer 是否存在
-ls -la mirror-data/installers/GitHub.Desktop/3.4.0/x64/
+# 檢查特定版本的檔案
+ls -la mirror-data/packages/GitHub.Desktop/3.4.0/
 ```
 
 ---
@@ -524,6 +527,24 @@ winget source add -n $sourceName -a $sourceUrl -t "Microsoft.Rest"
 | Windows Server 2022 | 需安裝 | ✅ (安裝 App Installer) |
 | Windows 10 1809+ | 需安裝 | ✅ (安裝 App Installer) |
 
+> **注意**: winget 版本需 ≥ 1.4 才支援 REST source type。
+
+### Windows Server 2022 安裝 winget
+
+從 [winget-cli GitHub Releases](https://github.com/microsoft/winget-cli/releases) 下載最新版本：
+
+```powershell
+# 安裝相依項
+Add-AppxPackage -Path "Microsoft.VCLibs.x64.14.00.Desktop.appx"
+Add-AppxPackage -Path "Microsoft.UI.Xaml.2.8.x64.appx"
+
+# 安裝 App Installer (含 winget)
+Add-AppxPackage -Path "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+
+# 驗證安裝
+winget --version
+```
+
 ---
 
 ## 監控與可觀測性
@@ -558,10 +579,9 @@ podman run -d --name ferry-winget \
 # 檢查 mirror-data 大小
 du -sh mirror-data/
 du -sh mirror-data/packages/
-du -sh mirror-data/installers/
 
 # 各套件佔用空間
-du -sh mirror-data/installers/* | sort -rh | head -20
+du -sh mirror-data/packages/* | sort -rh | head -20
 ```
 
 ---
@@ -648,7 +668,7 @@ podman restart ferry-winget
 ```text
 A: 減少 retention.max_major_versions 的數值 (例如從 5 改為 3)
    然後重新執行 Downloader，舊版本會被標記為移除
-   手動刪除 mirror-data/installers/ 中多餘的版本目錄
+   手動刪除 mirror-data/packages/ 中多餘的版本目錄
 ```
 
 ### Q: 新增套件後 winget 搜尋不到
@@ -662,7 +682,7 @@ A: 1. 確認套件已在 mirror-data/packages/ 中
 ### Q: winget install 下載失敗
 
 ```text
-A: 1. 確認 installer 檔案存在於 mirror-data/installers/ 中
+A: 1. 確認 installer 檔案存在於 mirror-data/packages/{PackageId}/{Version}/ 中
    2. 檢查 Server 日誌: podman logs ferry-winget
    3. 手動測試: curl http://<server>:8080/api/installers/<id>/<ver>/<arch>/<file>
 ```

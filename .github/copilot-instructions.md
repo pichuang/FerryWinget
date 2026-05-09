@@ -10,7 +10,7 @@
 # Build all
 dotnet build
 
-# Run all tests (62 tests across 3 projects)
+# Run all tests (63 tests across 3 projects)
 dotnet test
 
 # Run single test project
@@ -51,7 +51,7 @@ config.yaml                   → 共用設定檔
 
 ### Key Components
 
-- **PackageFilter** (`Core/Filtering/`) — Glob pattern allowlist/blocklist (structured blocklist with `enabled`/`publishers`/`packages`), blocklist 優先權最高
+- **PackageFilter** (`Core/Filtering/`) — Glob pattern allowlist/blocklist (structured with `enabled`/`publishers`/`packages`), blocklist 優先權最高
 - **FileSystemPackageStore** (`Core/Storage/`) — 扁平式檔案系統套件儲存 (`{PackageId}/{Version}/` 下放 manifest + installer)
 - **GitHubManifestClient** (`Downloader/Services/`) — GitHub Tree API 列舉 winget-pkgs manifests，支援本地快取 (TTL 30min)
 - **InstallerDownloader** (`Downloader/Services/`) — SemaphoreSlim(16) 並行串流下載 + SHA256 驗證 + 重試 + 架構排除
@@ -76,6 +76,7 @@ config.yaml                   → 共用設定檔
 - **時區**: 所有時間戳記使用 `Asia/Taipei` (UTC+8)，透過 `TaipeiTimeHelper`
 - **config.yaml**: Server 和 Downloader 共用同一個設定檔，使用 `YamlDotNet` + `UnderscoredNamingConvention`
 - **Blocklist 優先**: 篩選邏輯中 blocklist 永遠優先於 allowlist
+- **Allowlist 結構**: `allowlist` 是結構化物件，含 `enabled`、`publishers`（依發行者名稱允許）、`packages`（依套件識別碼允許，支援 glob），publishers 和 packages 為 OR 聯集關係
 - **Blocklist 結構**: `blocklist` 是結構化物件，含 `enabled`、`publishers`（依發行者名稱封鎖）、`packages`（依套件識別碼封鎖，支援 glob）
 - **版本保留策略**: 階層式修剪 — Major (最多 3) → Minor (最新 Major 留 3, 歷史留 1) → Patch (每組留最新 2)，加上安全機制 (30 天 grace period + pinned tags)
 - **InstallerUrl rewrite**: Server 回傳 manifest 時將外部 URL 改寫為指向內網 `/api/installers/...`

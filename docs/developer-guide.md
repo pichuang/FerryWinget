@@ -95,8 +95,8 @@ ferry-winget/
 │       └── Dockerfile
 │
 ├── tests/                              # 測試 (xUnit + FluentAssertions)
-│   ├── FerryWinget.Core.Tests/         # 22 tests
-│   ├── FerryWinget.Downloader.Tests/   # 23 tests
+│   ├── FerryWinget.Core.Tests/         # 26 tests
+│   ├── FerryWinget.Downloader.Tests/   # 27 tests
 │   └── FerryWinget.Server.Tests/       # 10 tests
 │
 ├── config.yaml                         # 共用設定檔
@@ -143,7 +143,7 @@ Server.Tests → Server + Core
 │              → ReportGenerator (Markdown 報告)                │
 │              → FirewallPolicyDeployer (Azure Firewall)        │
 │                                                              │
-│  輸出: mirror-data/{packages,installers}/ + reports/*.md      │
+│  輸出: mirror-data/packages/ + reports/*.md                   │
 └──────────────────────────────────────────────────────────────┘
                           │
                     (檔案搬運/同步)
@@ -171,12 +171,14 @@ Server.Tests → Server + Core
 
 4. **時區** — 所有時間戳記透過 `TaipeiTimeHelper` 輸出 Asia/Taipei (UTC+8)，確保報告和日誌時間一致。
 
-5. **檔案系統儲存** — 使用目錄結構而非資料庫：
+5. **檔案系統儲存** — 使用扁平目錄結構而非資料庫：
 
    ```text
    mirror-data/
-   ├── packages/{PackageId}/{Version}/{PackageId}.yaml
-   └── installers/{PackageId}/{Version}/{Architecture}/{filename}
+   └── packages/{PackageId}/{Version}/
+       ├── {PackageId}.yaml        # manifest
+       ├── setup-x64.exe           # installer (扁平放置，無架構子目錄)
+       └── setup-x86.msi
    ```
 
 ---
@@ -195,16 +197,23 @@ source:
 # === 儲存路徑 ===
 storage:
   root_path: "./mirror-data"              # 根目錄
-  packages_dir: "packages"               # manifest YAML
-  installers_dir: "installers"           # installer 二進位
+  packages_dir: "packages"               # manifest YAML + installer 二進位 (扁平結構)
   reports_dir: "reports"                 # Markdown 報告
 
 # === 套件篩選 ===
 filtering:
-  allowlist:                              # Glob 模式，空 = 全部允許
-    - "GitHub.*"
-  blocklist:                              # Glob 模式，優先權最高
-    - "Google.*"
+  allowlist:                              # 結構化允許清單 (publishers + packages OR 聯集)
+    enabled: true
+    publishers:
+      - "Microsoft"
+      - "GitHub, Inc."
+    packages:
+      - "GitHub.*"
+  blocklist:                              # 結構化封鎖清單，優先權最高
+    enabled: true
+    publishers: []
+    packages:
+      - "Google.*"
 
 # === 版本保留 ===
 retention:
@@ -213,9 +222,12 @@ retention:
 # === 下載器設定 ===
 downloader:
   max_concurrency: 16                     # SemaphoreSlim 上限
-  download_timeout_seconds: 300           # 單檔下載逾時 (秒)
+  download_timeout_seconds: 600           # 單檔下載逾時 (秒)
   retry_count: 3                          # 失敗重試次數
-  user_agent: "FerryWinget/1.0"           # HTTP User-Agent
+  user_agent: "Mozilla/5.0 ..."           # Edge on Windows 10 browser string
+  cache_ttl_minutes: 30                   # 套件列舉快取 TTL (分鐘)
+  excluded_architectures:                 # 排除的架構
+    - "arm64"
 
 # === Server 設定 ===
 server:
@@ -259,7 +271,7 @@ timezone: "Asia/Taipei"                   # 所有時間戳記使用的時區
 ### 執行測試
 
 ```bash
-# 全部測試 (55 tests)
+# 全部測試 (63 tests)
 dotnet test
 
 # 單一專案
@@ -286,8 +298,8 @@ dotnet test --logger "console;verbosity=detailed"
 
 | 測試專案 | 數量 | 涵蓋內容 |
 | --------- | ------ | --------- |
-| Core.Tests | 22 | PackageFilter (7)、ConfigLoader (4)、FileSystemPackageStore (8)、TaipeiTimeHelper (3) |
-| Downloader.Tests | 23 | VersionRetention (6)、UrlAnalyzer (5)、FirewallDeployer (6)、ReportGenerator (3)、GitHubManifestClient (3) |
+| Core.Tests | 26 | PackageFilter (9)、ConfigLoader (4)、FileSystemPackageStore (8)、TaipeiTimeHelper (3)、AllowlistConfig (2) |
+| Downloader.Tests | 27 | VersionRetention (6)、UrlAnalyzer (5)、FirewallDeployer (6)、ReportGenerator (3)、GitHubManifestClient (3)、InstallerDownloader (4) |
 | Server.Tests | 10 | Information API (1)、ManifestSearch (3)、PackageManifests (4)、Installer Download (2) |
 
 ### 新增測試
