@@ -26,7 +26,7 @@ public class Program
         Console.WriteLine($"FerryWinget Downloader v1.0");
         Console.WriteLine($"時間: {TaipeiTimeHelper.FormatTimestamp()}");
         Console.WriteLine($"設定檔: {configPath}");
-        if (dryRun) Console.WriteLine("模式: --dry-run (不會執行 Azure Firewall 部署)");
+        if (dryRun) Console.WriteLine("模式: --dry-run (不下載檔案，不部署 Azure Firewall)");
         Console.WriteLine();
 
         FerryConfig config;
@@ -155,43 +155,55 @@ public class Program
                 }
             }
 
-            Console.WriteLine($"  下載 {downloadRequests.Count} 個 installer...");
-            var progressLock = new object();
-            var results = await downloader.DownloadBatchAsync(
-                downloadRequests,
-                onProgress: (done, total, result) =>
-                {
-                    var pct = (int)(done * 100.0 / total);
-                    var barLen = 30;
-                    var filled = (int)(barLen * done / (double)total);
-                    var bar = new string('█', filled) + new string('░', barLen - filled);
-                    var status = result.Skipped ? "略過" : result.Success ? "完成" : "失敗";
-                    var name = $"{result.Request.PackageId}/{result.Request.Architecture}";
-                    if (name.Length > 40) name = name[..37] + "...";
+            List<DownloadResult> results;
+            var failedList = new List<DownloadResult>();
+            int succeeded = 0, skipped = 0;
 
-                    lock (progressLock)
-                    {
-                        Console.Write($"\r  [{bar}] {pct,3}% ({done}/{total}) {status}: {name,-40}");
-                        if (done == total) Console.WriteLine();
-                    }
-                });
-            var succeeded = results.Count(r => r.Success && !r.Skipped);
-            var skipped = results.Count(r => r.Skipped);
-            var failedList = results.Where(r => !r.Success).ToList();
-            Console.WriteLine($"  成功: {succeeded}, 略過 (已存在): {skipped}, 失敗: {failedList.Count}");
-
-            // Show failed downloads detail
-            if (failedList.Count > 0)
+            if (dryRun)
             {
-                Console.WriteLine();
-                Console.WriteLine("  ⚠️ 下載失敗的檔案:");
-                foreach (var f in failedList)
+                Console.WriteLine($"  [dry-run] 略過下載 {downloadRequests.Count} 個 installer");
+                results = [];
+            }
+            else
+            {
+                Console.WriteLine($"  下載 {downloadRequests.Count} 個 installer...");
+                var progressLock = new object();
+                results = await downloader.DownloadBatchAsync(
+                    downloadRequests,
+                    onProgress: (done, total, result) =>
+                    {
+                        var pct = (int)(done * 100.0 / total);
+                        var barLen = 30;
+                        var filled = (int)(barLen * done / (double)total);
+                        var bar = new string('█', filled) + new string('░', barLen - filled);
+                        var status = result.Skipped ? "略過" : result.Success ? "完成" : "失敗";
+                        var name = $"{result.Request.PackageId}/{result.Request.Architecture}";
+                        if (name.Length > 40) name = name[..37] + "...";
+
+                        lock (progressLock)
+                        {
+                            Console.Write($"\r  [{bar}] {pct,3}% ({done}/{total}) {status}: {name,-40}");
+                            if (done == total) Console.WriteLine();
+                        }
+                    });
+                succeeded = results.Count(r => r.Success && !r.Skipped);
+                skipped = results.Count(r => r.Skipped);
+                failedList = results.Where(r => !r.Success).ToList();
+                Console.WriteLine($"  成功: {succeeded}, 略過 (已存在): {skipped}, 失敗: {failedList.Count}");
+
+                // Show failed downloads detail
+                if (failedList.Count > 0)
                 {
-                    Console.WriteLine($"    ✗ {f.Request.PackageId} {f.Request.Version} ({f.Request.Architecture})");
-                    Console.WriteLine($"      URL: {f.Request.InstallerUrl}");
-                    Console.WriteLine($"      原因: {f.Error}");
+                    Console.WriteLine();
+                    Console.WriteLine("  ⚠️ 下載失敗的檔案:");
+                    foreach (var f in failedList)
+                    {
+                        Console.WriteLine($"    ✗ {f.Request.PackageId} {f.Request.Version} ({f.Request.Architecture})");
+                        Console.WriteLine($"      URL: {f.Request.InstallerUrl}");
+                        Console.WriteLine($"      原因: {f.Error}");
+                    }
+                    Console.WriteLine();
                 }
-                Console.WriteLine();
             }
 
             // Step 5: URL analysis

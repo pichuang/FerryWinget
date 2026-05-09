@@ -36,15 +36,28 @@ public sealed class InstallerDownloader : IDisposable
         await _semaphore.WaitAsync(ct);
         try
         {
-            // Check if already downloaded
+            // Check if already downloaded — verify SHA256 integrity if hash is available
             if (await _store.InstallerExistsAsync(request.PackageId, request.Version, request.Architecture, request.FileName, ct))
             {
-                return new DownloadResult
+                if (!string.IsNullOrEmpty(request.ExpectedSha256))
                 {
-                    Request = request,
-                    Success = true,
-                    Skipped = true
-                };
+                    var existingData = await _store.LoadInstallerAsync(
+                        request.PackageId, request.Version, request.Architecture, request.FileName, ct);
+                    if (existingData is not null)
+                    {
+                        var existingHash = Convert.ToHexString(SHA256.HashData(existingData));
+                        if (string.Equals(existingHash, request.ExpectedSha256, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new DownloadResult { Request = request, Success = true, Skipped = true };
+                        }
+                        // Hash mismatch — re-download
+                    }
+                }
+                else
+                {
+                    // No hash to verify — trust existing file
+                    return new DownloadResult { Request = request, Success = true, Skipped = true };
+                }
             }
 
             Exception? lastException = null;

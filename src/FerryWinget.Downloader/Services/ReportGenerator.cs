@@ -18,6 +18,10 @@ public sealed class ReportGenerator
     public ReportGenerator(string reportsDir)
     {
         _reportsDir = reportsDir;
+    }
+
+    private void EnsureDirectory()
+    {
         Directory.CreateDirectory(_reportsDir);
     }
 
@@ -91,6 +95,7 @@ public sealed class ReportGenerator
         sb.AppendLine($"- 略過: **{filterResult.SkippedPackages.Count}** 個套件");
 
         var content = sb.ToString();
+        EnsureDirectory();
         File.WriteAllText(Path.Combine(_reportsDir, "full-package-list.md"), content);
         return content;
     }
@@ -140,8 +145,8 @@ public sealed class ReportGenerator
         sb.AppendLine($"- 移除: **{removedPackages.Count}**");
 
         var content = sb.ToString();
-        File.WriteAllText(Path.Combine(_reportsDir, "diff-report.md"), content);
-        return content;
+        EnsureDirectory();
+        File.WriteAllText(Path.Combine(_reportsDir, "diff-report.md"), content);        return content;
     }
 
     /// <summary>
@@ -235,6 +240,7 @@ public sealed class ReportGenerator
         sb.AppendLine($"- 具有 redirect 的 URL: **{analysis.RedirectMap.Count}**");
 
         var content = sb.ToString();
+        EnsureDirectory();
         File.WriteAllText(Path.Combine(_reportsDir, "firewall-fqdns.md"), content);
         return content;
     }
